@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WEALTHCONS — Theo dõi tiến độ</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C8A96E;--dark:#0f172a;--surface:#111827;--panel-bg:#f8fafc;
+  --border:rgba(0,0,0,.08);--text:#0f172a;--muted:#64748b;
+  --green:#059669;--blue:#2563eb;--amber:#d97706;
+  --accent:var(--gold);
+}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--dark);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── SCREEN SYSTEM ── */
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden}
+.screen.active{display:flex}
+
+/* ══════════════════════════════════════
+   SCREEN 0: PROJECT SELECTOR
+══════════════════════════════════════ */
+#scr-selector{background:var(--dark);align-items:center;justify-content:center}
+.sel-wrap{width:100%;max-width:900px;padding:40px 24px}
+.sel-brand{text-align:center;margin-bottom:40px}
+.sel-brand-logo{font-size:11px;font-weight:600;letter-spacing:.2em;color:#475569;text-transform:uppercase;margin-bottom:10px}
+.sel-brand-title{font-size:28px;font-weight:700;color:#f1f5f9;margin-bottom:6px}
+.sel-brand-sub{font-size:13px;color:#475569}
+.sel-brand-title span{color:var(--gold)}
+
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:28px}
+.proj-card{background:#111827;border:1px solid #1e293b;border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.proj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,var(--gold))}
+.proj-card:hover{border-color:#334155;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.proj-card.loading-card{opacity:.6;cursor:wait}
+.pc-badge{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.08);color:#94a3b8;margin-bottom:10px;display:inline-block}
+.pc-name{font-size:16px;font-weight:600;color:#f1f5f9;margin-bottom:4px}
+.pc-sub{font-size:11px;color:#475569;margin-bottom:14px}
+.pc-arrow{position:absolute;bottom:18px;right:18px;font-size:18px;color:#334155;transition:all .2s}
+.proj-card:hover .pc-arrow{color:var(--c,var(--gold));transform:translateX(3px)}
+.pc-loading{font-size:11px;color:#475569;margin-top:8px}
+.pc-stats{display:flex;gap:10px;margin-top:4px}
+.pc-stat{font-size:11px;color:#94a3b8}
+.pc-stat span{font-weight:600;color:#f1f5f9}
+
+.sel-add{border:1px dashed #1e293b;border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;color:#334155;font-size:13px}
+.sel-add:hover{border-color:#334155;color:#475569}
+.sel-footer{text-align:center;font-size:11px;color:#1e293b;margin-top:20px}
+.sel-footer span{color:#334155}
+
+/* Loading spinner */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════
+   SCREEN 1: PROJECT DASHBOARD
+══════════════════════════════════════ */
+#scr-dashboard{background:var(--dark)}
+
+/* Header */
+header{background:#0f172a;border-bottom:1px solid #1e293b;padding:9px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.h-back{font-family:inherit;font-size:11px;color:#475569;background:transparent;border:1px solid #1e293b;border-radius:6px;padding:4px 10px;cursor:pointer;transition:all .15s}
+.h-back:hover{border-color:#334155;color:#94a3b8}
+.h-sep{width:1px;height:16px;background:#1e293b}
+.h-proj-id{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.h-proj-name{font-size:13px;font-weight:600;color:#f1f5f9}
+.h-spacer{flex:1}
+.h-tabs{display:flex;gap:2px;background:#1e293b;border-radius:8px;padding:3px}
+.h-tab{font-family:inherit;font-size:11px;padding:5px 14px;border-radius:6px;cursor:pointer;border:none;background:transparent;color:#64748b;font-weight:500;transition:all .15s}
+.h-tab.active{background:#0f172a;color:#f1f5f9}
+.h-right{display:flex;align-items:center;gap:8px;margin-left:10px}
+.rbtn{font-family:inherit;font-size:11px;color:var(--gold);background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.3);border-radius:20px;padding:5px 12px;cursor:pointer}
+.rbtn:hover{background:rgba(200,169,110,.2)}
+.lupd{font-size:11px;color:#475569}
+
+/* ── TAB CONTENTS ── */
+.tab-content{display:none;flex:1;overflow:hidden;flex-direction:column}
+.tab-content.active{display:flex}
+
+/* ── TAB: MAP ── */
+/* Project summary bar */
+.proj-bar{background:#0f172a;border-bottom:1px solid #1e293b;padding:9px 18px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;flex-shrink:0}
+.proj-item{background:#1e293b;border-radius:8px;padding:9px 13px}
+.proj-label{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:600}
+.proj-nums{display:flex;align-items:baseline;gap:5px;margin-bottom:5px}
+.proj-done{font-size:15px;font-weight:700;color:#f1f5f9}
+.proj-total{font-size:11px;color:#cbd5e1}
+.proj-unit{font-size:9px;color:#cbd5e1}
+.proj-pct-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto}
+.proj-bar-wrap{height:4px;background:#334155;border-radius:3px;overflow:hidden}
+.proj-bar-fill{height:100%;border-radius:3px;transition:width .6s}
+
+/* Stats strip */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#1e293b;border-bottom:1px solid #1e293b;flex-shrink:0}
+.stat{background:#0f172a;padding:6px 14px;text-align:center}
+.stat-n{font-size:17px;font-weight:700;line-height:1;margin-bottom:1px;color:#f1f5f9}
+.stat-l{font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:.05em}
+
+/* Ctrl hint */
+.ctrl-hint{background:#1e3a5f;border-bottom:1px solid #1d4ed8;padding:4px 18px;font-size:10px;color:#93c5fd;flex-shrink:0;display:flex;align-items:center;gap:14px}
+.ctrl-hint b{color:#fbbf24}
+.sel-count{background:#1d4ed8;color:#fff;padding:1px 8px;border-radius:10px;font-weight:700}
+.clear-btn{font-family:inherit;font-size:10px;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:2px 8px;cursor:pointer;margin-left:auto}
+
+/* Main split */
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* Map */
+.mp{flex:1;position:relative;overflow:hidden;background:#1e293b;min-width:0}
+.ms{width:100%;height:100%;overflow:auto}
+.mw{display:inline-block;transform-origin:top left;line-height:0}
+#map-svg polygon{cursor:pointer;transition:opacity .1s}
+#map-svg polygon:hover{opacity:.5!important}
+#map-svg polygon.sel{stroke:#fff;stroke-width:4;opacity:1!important;filter:drop-shadow(0 0 8px rgba(255,255,255,.5))}
+#map-svg polygon.multi-sel{stroke:#fbbf24;stroke-width:3;opacity:1!important;filter:drop-shadow(0 0 6px rgba(251,191,36,.6))}
+.zc{position:absolute;bottom:14px;right:14px;display:flex;flex-direction:column;gap:4px;z-index:10}
+.zb{width:28px;height:28px;background:#1e293b;border:1px solid #334155;border-radius:6px;font-size:13px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.zb:hover{background:#334155;color:#f1f5f9}
+.leg{position:absolute;bottom:14px;left:14px;background:rgba(15,23,42,.92);border:1px solid #334155;border-radius:10px;padding:9px 13px;font-size:11px;z-index:10;max-height:180px;overflow-y:auto}
+.lt{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.lr{display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#cbd5e1;font-size:11px}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* Rubberband */
+#rubberband{position:fixed;border:2px dashed #fbbf24;background:rgba(251,191,36,.08);pointer-events:none;display:none;z-index:9999}
+
+/* Map loading overlay */
+.map-loading{position:absolute;inset:0;background:rgba(15,23,42,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;font-size:13px;color:#94a3b8}
+
+/* RIGHT PANEL */
+.panel{width:340px;flex-shrink:0;background:#f8fafc;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+
+/* Empty state */
+.pe{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;color:var(--muted)}
+.peico{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#f0ebe0,#e5ddd0);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:24px}
+.pe h3{font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text)}
+.pe p{font-size:11px;line-height:1.7}
+
+/* Single unit panel */
+.pb{display:none;flex-direction:column;overflow-y:auto;height:100%}
+.pb.show{display:flex}
+.pb::-webkit-scrollbar{width:4px}
+.pb::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:2px}
+
+.phdr{padding:14px 16px 12px;background:#0f172a;color:#fff;flex-shrink:0}
+.pz{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:2px}
+.pid{font-size:22px;font-weight:700;margin-bottom:2px}
+.psub{font-size:11px;color:#475569}
+.badge{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
+.bdot{width:5px;height:5px;border-radius:50%}
+
+/* Villa image */
+.villa-img{width:100%;height:130px;object-fit:cover;flex-shrink:0;background:#e2e8f0;display:block}
+.villa-img-ph{width:100%;height:90px;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);display:flex;align-items:center;justify-content:center;font-size:28px;color:#cbd5e1;flex-shrink:0}
+
+/* Info grid */
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:9px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ic{background:#fff;border:1px solid var(--border);border-radius:7px;padding:7px 9px}
+.icl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.icv{font-size:12px;font-weight:600}
+
+/* Milestones */
+.ps{padding:11px 13px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sttl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+.mr{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:11px}
+.md{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mn{flex:1}
+.mt{font-size:9px;font-weight:600;padding:2px 7px;border-radius:8px;white-space:nowrap}
+.done{background:#dcfce7;color:#166534}
+.cur{background:#fef9c3;color:#854d0e}
+.pend{background:#f1f5f9;color:var(--muted)}
+.pbw{height:3px;background:#f1f5f9;border-radius:2px;margin:9px 0 2px;overflow:hidden}
+.pb2{height:100%;background:var(--gold);border-radius:2px;transition:width .5s}
+.pp{font-size:10px;color:var(--muted);text-align:right}
+
+/* KL section */
+.kls{padding:11px 13px;flex:1}
+.kl-chart-wrap{position:relative;height:120px;margin-bottom:10px}
+.ki{margin-bottom:10px}
+.kh{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.kn{font-size:11px;font-weight:500}
+.kstats{display:flex;align-items:center;gap:6px}
+.knum{font-size:10px;color:var(--muted)}
+.kpct-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
+.kbw{height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+.kb{height:100%;border-radius:4px;transition:width .6s}
+
+/* Panel footer */
+.pf{padding:8px 13px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);background:#f8fafc;flex-shrink:0}
+
+/* Multi panel */
+.mpb{display:none;flex-direction:column;height:100%;overflow-y:auto}
+.mpb.show{display:flex}
+.mphdr{padding:13px 15px 11px;background:#1e3a5f;color:#fff;flex-shrink:0}
+.mp-ttl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;margin-bottom:2px}
+.mp-count{font-size:20px;font-weight:700;margin-bottom:2px}
+.mp-sub{font-size:11px;color:#93c5fd}
+.mp-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px}
+.mp-tag{font-size:9px;padding:2px 7px;border-radius:8px;background:rgba(255,255,255,.1);color:#e2e8f0}
+.mp-kl{padding:13px 15px;flex:1}
+.mp-kl-item{margin-bottom:14px}
+.mp-kl-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.mp-kl-name{font-size:12px;font-weight:500;display:flex;align-items:center;gap:5px;color:#fff}
+.mp-kl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
+.mp-kl-nums{font-size:11px;color:var(--muted)}
+.mp-kl-pct{font-size:11px;font-weight:700;padding:2px 9px;border-radius:8px;color:#fff}
+.mp-bw{height:9px;background:#f1f5f9;border-radius:5px;overflow:hidden;margin-bottom:3px}
+.mp-bf{height:100%;border-radius:5px;transition:width .6s}
+.mp-detail{font-size:9px;color:var(--muted);text-align:right}
+.mp-ms-summary{padding:11px 15px;border-top:1px solid var(--border);flex-shrink:0}
+.mp-ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.mp-ms-cell{background:#f1f5f9;border-radius:7px;padding:7px 9px;text-align:center}
+.mp-ms-num{font-size:16px;font-weight:700}
+.mp-ms-lbl{font-size:9px;color:var(--muted);margin-top:1px}
+
+/* ── TAB: EDITOR ── */
+#tab-editor{background:#0d1520}
+.ed-wrap{display:flex;flex:1;overflow:hidden;min-height:0}
+.ed-canvas{flex:1;position:relative;overflow:hidden;min-width:0}
+#ed-cs{width:100%;height:100%;overflow:auto;cursor:crosshair}
+#ed-ci{display:inline-block;transform-origin:top left;line-height:0}
+#ed-svg{display:block}
+.ed-toolbar{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:5px;z-index:10}
+.etb{width:34px;height:34px;background:#111827;border:1px solid #1e293b;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .15s}
+.etb:hover{background:#1e293b;border-color:#334155}
+.etb.active{background:rgba(245,158,11,.2);border-color:#f59e0b}
+.ed-banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);border-radius:18px;padding:4px 14px;font-size:10px;color:#fbbf24;font-weight:600;z-index:10;pointer-events:none;white-space:nowrap}
+.ed-sb{position:absolute;bottom:12px;left:12px;background:rgba(10,15,26,.9);border:1px solid #1e293b;border-radius:7px;padding:5px 11px;font-size:10px;color:#64748b;z-index:10;display:flex;gap:10px;align-items:center}
+.ed-zc{position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:10}
+.ed-panel{width:280px;flex-shrink:0;background:#111827;border-left:1px solid #1e293b;display:flex;flex-direction:column;overflow:hidden}
+.ep-title{padding:10px 13px;border-bottom:1px solid #1e293b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;display:flex;align-items:center;justify-content:space-between}
+.ep-badge{background:rgba(59,130,246,.2);color:#60a5fa;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700}
+.ep-form{padding:10px 12px;border-bottom:1px solid #1e293b;flex-shrink:0}
+.efl{font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.efi{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:5px;padding:5px 8px;font-size:11px;color:#e2e8f0;font-family:monospace;outline:none;transition:border .15s;margin-bottom:7px}
+.efi:focus{border-color:#3b82f6}
+select.efi{cursor:pointer}
+option{background:#0f172a}
+.epts{background:#0f172a;border-radius:5px;padding:6px 9px;font-size:10px;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.eptsn{font-size:16px;font-weight:700;color:#3b82f6;font-family:monospace}
+.eptsh{font-size:9px;color:#64748b;line-height:1.4}
+.ep-btns{display:flex;gap:5px}
+.epbtn{flex:1;font-family:inherit;font-size:10px;padding:6px 7px;border-radius:5px;cursor:pointer;border:none;font-weight:600;transition:all .15s}
+.epbtn-s{background:#10b981;color:#fff}
+.epbtn-s:hover{background:#059669}
+.epbtn-s:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
+.epbtn-c{background:transparent;border:1px solid #1e293b;color:#64748b}
+.epbtn-c:hover{border-color:#ef4444;color:#ef4444}
+.ep-list{flex:1;overflow-y:auto;padding:7px}
+.ep-list::-webkit-scrollbar{width:3px}
+.ep-list::-webkit-scrollbar-thumb{background:#1e293b}
+.ep-item{background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;margin-bottom:4px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.ep-item:hover{border-color:#334155;background:#131c2e}
+.ep-item.ep-sel{border-color:#f59e0b;background:rgba(245,158,11,.07)}
+.ep-ico{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.ep-id{font-size:10px;font-weight:700;font-family:monospace;flex:1}
+.ep-type{font-size:9px;color:#475569}
+.ep-pts{font-size:9px;color:#334155;font-family:monospace;margin-left:auto;flex-shrink:0}
+.ep-del{font-size:10px;color:#475569;opacity:0;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:1px 4px;border-radius:3px;flex-shrink:0}
+.ep-del:hover{color:#ef4444}
+.ep-item:hover .ep-del{opacity:1}
+.ep-empty{text-align:center;padding:24px 12px;color:#334155;font-size:11px}
+.ep-export{padding:10px 12px;border-top:1px solid #1e293b;flex-shrink:0}
+.ep-exparea{width:100%;background:#0a0f1a;border:1px solid #1e293b;border-radius:5px;padding:6px 8px;font-size:9px;color:#60a5fa;font-family:monospace;height:80px;resize:none;outline:none}
+.ep-exprow{display:flex;gap:4px;margin-top:5px}
+
+/* Upload overlay in editor */
+.ed-upload-ovl{position:absolute;inset:0;background:rgba(10,15,26,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:30}
+.ed-dropbox{border:2px dashed #1e293b;border-radius:12px;padding:30px 44px;text-align:center;cursor:pointer;transition:all .2s;max-width:380px}
+.ed-dropbox:hover,.ed-dropbox.drag{border-color:var(--gold);background:rgba(200,169,110,.05)}
+
+/* ── GENERAL UTILITIES ── */
+.dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SCREEN 0: PROJECT SELECTOR
+══════════════════════════════════════ -->
+<div class="screen active" id="scr-selector" style="display:flex">
+  <div class="sel-wrap">
+    <div class="sel-brand">
+      <div class="sel-brand-logo">Wealthcons Construction</div>
+      <div class="sel-brand-title">Theo dõi <span>Tiến độ Thi công</span></div>
+      <div class="sel-brand-sub">Chọn dự án để xem dashboard</div>
+    </div>
+    <div class="proj-grid" id="proj-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:#334155;font-size:13px">
+        <div class="spinner" style="margin:0 auto 12px"></div>
+        Đang tải danh sách dự án...
+      </div>
+    </div>
+    <div class="sel-footer">API: Google Sheets · Auto-refresh mỗi <span>5 phút</span> · Dữ liệu real-time</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1: PROJECT DASHBOARD
+══════════════════════════════════════ -->
+<div class="screen" id="scr-dashboard">
+
+  <!-- Header -->
+  <header>
+    <button class="h-back" onclick="goHome()">← Dự án</button>
+    <div class="h-sep"></div>
+    <div>
+      <div class="h-proj-id" id="h-proj-id">—</div>
+      <div class="h-proj-name" id="h-proj-name">—</div>
+    </div>
+    <div class="h-spacer"></div>
+    <div class="h-tabs">
+      <button class="h-tab active" id="htab-map" onclick="switchTab('map')">🗺 Bản đồ</button>
+      <button class="h-tab" id="htab-editor" onclick="switchTab('editor')">✏️ Editor</button>
+    </div>
+    <div class="h-right">
+      <span class="lupd" id="lupd">—</span>
+      <button class="rbtn" onclick="refreshData()">↻ Làm mới</button>
+    </div>
+  </header>
+
+  <!-- TAB: MAP -->
+  <div class="tab-content active" id="tab-map">
+
+    <!-- Project KL summary -->
+    <div class="proj-bar">
+      <div class="proj-item">
+        <div class="proj-label">Bê tông</div>
+        <div class="proj-nums">
+          <span class="proj-done" id="proj-c-done">—</span>
+          <span class="proj-total" id="proj-c-total">/ —</span>
+          <span class="proj-unit">m³</span>
+          <span class="proj-pct-badge" id="proj-c-pct" style="background:#1e3a5f;color:#60a5fa">—</span>
+        </div>
+        <div class="proj-bar-wrap"><div class="proj-bar-fill" id="proj-c-bar" style="width:0%;background:#60a5fa"></div></div>
+      </div>
+      <div class="proj-item">
+        <div class="proj-label">Cốt thép</div>
+        <div class="proj-nums">
+          <span class="proj-done" id="proj-r-done">—</span>
+          <span class="proj-total" id="proj-r-total">/ —</span>
+          <span class="proj-unit">tấn</span>
+          <span class="proj-pct-badge" id="proj-r-pct" style="background:#14532d;color:#34d399">—</span>
+        </div>
+        <div class="proj-bar-wrap"><div class="proj-bar-fill" id="proj-r-bar" style="width:0%;background:#34d399"></div></div>
+      </div>
+      <div class="proj-item">
+        <div class="proj-label">Coppha</div>
+        <div class="proj-nums">
+          <span class="proj-done" id="proj-f-done">—</span>
+          <span class="proj-total" id="proj-f-total">/ —</span>
+          <span class="proj-unit">m²</span>
+          <span class="proj-pct-badge" id="proj-f-pct" style="background:#451a03;color:#fbbf24">—</span>
+        </div>
+        <div class="proj-bar-wrap"><div class="proj-bar-fill" id="proj-f-bar" style="width:0%;background:#fbbf24"></div></div>
+      </div>
+      <div class="proj-item" style="background:transparent;display:flex;align-items:center;justify-content:center">
+        <div style="text-align:center">
+          <div style="font-size:9px;color:#cbd5e1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Đang thi công</div>
+          <div style="font-size:26px;font-weight:700;color:var(--gold)" id="proj-active">—</div>
+          <div style="font-size:11px;color:#cbd5e1">/ <span id="proj-total-units">—</span> căn</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ctrl hint -->
+    <div class="ctrl-hint" id="ctrl-hint">
+      <span>💡 <b>Click</b> = 1 căn &nbsp;|&nbsp; <b>Ctrl+Click</b> hoặc <b>Ctrl+Kéo</b> = chọn cụm</span>
+      <span id="sel-info" style="display:none">
+        <span class="sel-count" id="sel-count">0</span> căn đã chọn
+        <button class="clear-btn" onclick="clearSel()">✕ Bỏ chọn</button>
+      </span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="s-total">—</div><div class="stat-l">Tổng căn</div></div>
+      <div class="stat"><div class="stat-n" id="s-act" style="color:var(--gold)">—</div><div class="stat-l">Đang thi công</div></div>
+      <div class="stat"><div class="stat-n" id="s-done" style="color:#34d399">—</div><div class="stat-l">Hoàn thành mốc</div></div>
+      <div class="stat"><div class="stat-n" id="s-none" style="color:#475569">—</div><div class="stat-l">Chưa bắt đầu</div></div>
+    </div>
+
+    <!-- Main: map + panel -->
+    <div class="main">
+      <div class="mp">
+        <!-- Map loading overlay -->
+        <div class="map-loading" id="map-loading">
+          <div class="spinner"></div>
+          <span id="map-loading-txt">Đang tải dữ liệu...</span>
+        </div>
+
+        <div class="ms" id="ms">
+          <div class="mw" id="mw">
+            <svg id="map-svg" xmlns="http://www.w3.org/2000/svg">
+              <rect id="map-bg" fill="#1e293b"/>
+              <image id="map-img" preserveAspectRatio="xMidYMid meet"/>
+              <g id="pg"></g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="leg">
+          <div class="lt">Chú thích tiến độ</div>
+          <div id="li"></div>
+          <div class="lr"><div class="ld" style="background:#374151"></div>Chưa bắt đầu</div>
+        </div>
+
+        <!-- Zoom controls -->
+        <div class="zc">
+          <div class="zb" onclick="zoom(1.25)">+</div>
+          <div class="zb" onclick="zoom(0.8)">−</div>
+          <div class="zb" onclick="resetZoom()" style="font-size:9px">FIT</div>
+        </div>
+
+        <div id="rubberband"></div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="panel">
+        <!-- Empty state -->
+        <div class="pe" id="pe">
+          <div class="peico">🏡</div>
+          <h3>Chọn căn hộ</h3>
+          <p>Click vào căn trên bản đồ<br>để xem chi tiết tiến độ</p>
+        </div>
+
+        <!-- Single unit panel -->
+        <div class="pb" id="pb">
+          <!-- Villa image -->
+          <div id="villa-img-wrap"></div>
+
+          <!-- Header -->
+          <div class="phdr">
+            <div class="pz" id="pz">—</div>
+            <div class="pid" id="pid">—</div>
+            <div class="psub" id="psub">—</div>
+            <div class="badge" id="bdg">
+              <div class="bdot" id="bdt"></div>
+              <span id="btxt">—</span>
+            </div>
+          </div>
+
+          <!-- Info grid -->
+          <div class="ig">
+            <div class="ic"><div class="icl">Loại căn</div><div class="icv" id="ptype">—</div></div>
+            <div class="ic"><div class="icl">Diện tích</div><div class="icv" id="parea">—</div></div>
+          </div>
+
+          <!-- Milestones -->
+          <div class="ps">
+            <div class="sttl">Tiến độ mốc thi công</div>
+            <div id="pms"></div>
+            <div class="pbw"><div class="pb2" id="pbar" style="width:0%"></div></div>
+            <div class="pp" id="ppct">0%</div>
+          </div>
+
+          <!-- KL section -->
+          <div class="kls">
+            <div class="sttl">Khối lượng thi công</div>
+            <div class="kl-chart-wrap"><canvas id="kl-chart"></canvas></div>
+            <div id="kli"></div>
+          </div>
+
+          <div class="pf" id="pf">—</div>
+        </div>
+
+        <!-- Multi-select panel -->
+        <div class="mpb" id="mpb">
+          <div class="mphdr">
+            <div class="mp-ttl">Đã chọn nhiều căn</div>
+            <div class="mp-count" id="mp-count">0</div>
+            <div class="mp-sub" id="mp-sub">—</div>
+            <div class="mp-tags" id="mp-tags"></div>
+          </div>
+          <div class="mp-kl">
+            <div class="sttl" style="color:var(--muted)">Tổng khối lượng</div>
+            <div class="mp-kl-item">
+              <div class="mp-kl-hdr">
+                <div class="mp-kl-name"><span class="mp-kl-dot" style="background:#60a5fa"></span>Bê tông</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span class="mp-kl-nums" id="mp-c-nums">—</span>
+                  <span class="mp-kl-pct" id="mp-c-pct" style="background:#1e3a5f">—</span>
+                </div>
+              </div>
+              <div class="mp-bw"><div class="mp-bf" id="mp-c-bar" style="width:0%;background:#60a5fa"></div></div>
+              <div class="mp-detail" id="mp-c-detail"></div>
+            </div>
+            <div class="mp-kl-item">
+              <div class="mp-kl-hdr">
+                <div class="mp-kl-name"><span class="mp-kl-dot" style="background:#34d399"></span>Cốt thép</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span class="mp-kl-nums" id="mp-r-nums">—</span>
+                  <span class="mp-kl-pct" id="mp-r-pct" style="background:#14532d">—</span>
+                </div>
+              </div>
+              <div class="mp-bw"><div class="mp-bf" id="mp-r-bar" style="width:0%;background:#34d399"></div></div>
+              <div class="mp-detail" id="mp-r-detail"></div>
+            </div>
+            <div class="mp-kl-item">
+              <div class="mp-kl-hdr">
+                <div class="mp-kl-name"><span class="mp-kl-dot" style="background:#fbbf24"></span>Coppha</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span class="mp-kl-nums" id="mp-f-nums">—</span>
+                  <span class="mp-kl-pct" id="mp-f-pct" style="background:#451a03">—</span>
+                </div>
+              </div>
+              <div class="mp-bw"><div class="mp-bf" id="mp-f-bar" style="width:0%;background:#fbbf24"></div></div>
+              <div class="mp-detail" id="mp-f-detail"></div>
+            </div>
+          </div>
+          <div class="mp-ms-summary">
+            <div class="sttl" style="color:var(--muted)">Phân loại tiến độ</div>
+            <div class="mp-ms-grid">
+              <div class="mp-ms-cell"><div class="mp-ms-num" style="color:var(--gold)" id="mp-act">—</div><div class="mp-ms-lbl">Đang thi công</div></div>
+              <div class="mp-ms-cell"><div class="mp-ms-num" style="color:#34d399" id="mp-done">—</div><div class="mp-ms-lbl">Hoàn thành mốc</div></div>
+              <div class="mp-ms-cell"><div class="mp-ms-num" style="color:#475569" id="mp-none">—</div><div class="mp-ms-lbl">Chưa bắt đầu</div></div>
+              <div class="mp-ms-cell"><div class="mp-ms-num" style="color:#a78bfa" id="mp-prog">—</div><div class="mp-ms-lbl">TB tiến độ</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-map -->
+
+  <!-- TAB: EDITOR -->
+  <div class="tab-content" id="tab-editor">
+    <div class="ed-wrap">
+      <div class="ed-canvas">
+        <!-- Upload overlay -->
+        <div class="ed-upload-ovl" id="ed-ovl">
+          <div class="ed-dropbox" id="ed-dropbox" onclick="document.getElementById('ed-fileinp').click()">
+            <div style="font-size:38px;margin-bottom:8px">🗺️</div>
+            <div style="font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:4px">Upload ảnh mặt bằng</div>
+            <div style="font-size:11px;color:#475569;margin-bottom:12px">PNG / JPG — kéo thả hoặc click</div>
+            <button style="font-family:inherit;font-size:11px;padding:7px 20px;border-radius:7px;cursor:pointer;border:none;background:var(--gold);color:#0a0f1a;font-weight:600" onclick="event.stopPropagation();document.getElementById('ed-fileinp').click()">Chọn ảnh</button>
+          </div>
+          <button style="font-family:inherit;font-size:11px;padding:5px 14px;border-radius:6px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Vẽ không có ảnh nền</button>
+        </div>
+        <input type="file" id="ed-fileinp" accept="image/*" style="display:none">
+
+        <!-- Toolbar -->
+        <div class="ed-toolbar">
+          <div class="etb active" id="etb-draw" title="Vẽ (D)" onclick="edSetMode('draw')">✏️</div>
+          <div class="etb" id="etb-pan" title="Pan (Space)" onclick="edSetMode('pan')">✋</div>
+          <div class="etb" id="etb-sel" title="Chọn (S)" onclick="edSetMode('sel')">🔲</div>
+          <div class="etb" title="Undo điểm (Ctrl+Z)" onclick="edUndo()" style="font-size:11px">↩</div>
+        </div>
+
+        <div class="ed-banner" id="ed-banner">✏️ VẼ — Click từng góc · Double-click để đóng hình</div>
+
+        <div id="ed-cs">
+          <div id="ed-ci">
+            <svg id="ed-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+        </div>
+
+        <div class="ed-sb">
+          <div class="dot" style="background:#10b981"></div>
+          <span id="ed-zoom" style="color:#475569">100%</span>
+          <span id="ed-xy" style="color:#60a5fa;font-size:9px">x:0 y:0</span>
+          <span id="ed-mode" style="color:#f59e0b">VẼ</span>
+        </div>
+
+        <div class="ed-zc">
+          <div class="zb" onclick="edZoom(1.2)">+</div>
+          <div class="zb" onclick="edZoom(0.83)">−</div>
+          <div class="zb" onclick="edFitZoom()" style="font-size:9px">FIT</div>
+        </div>
+      </div>
+
+      <!-- Editor panel -->
+      <div class="ed-panel">
+        <div class="ep-title">Thông tin căn <span class="ep-badge" id="ep-cnt">0</span></div>
+        <div class="ep-form">
+          <div class="efl">Mã căn (ID)</div>
+          <input class="efi" id="ep-id" placeholder="SD10-5, DV18-1 ...">
+          <div class="efl">Loại căn</div>
+          <select class="efi" id="ep-type">
+            <option value="Biệt thự vườn">Biệt thự vườn | Garden Mansion</option>
+            <option value="Dinh thự đồi">Dinh thự đồi | Hillside Mansion</option>
+            <option value="Dinh thự đồi góc">Dinh thự đồi góc | Corner Hillside</option>
+          </select>
+          <div style="display:flex;gap:5px">
+            <div style="flex:1"><div class="efl">Diện tích (m²)</div><input class="efi" id="ep-area" placeholder="160"></div>
+            <div style="flex:1"><div class="efl">GFA (m²)</div><input class="efi" id="ep-gfa" placeholder="256"></div>
+          </div>
+          <div class="epts">
+            <div>
+              <span class="eptsn" id="ep-ptsc">0</span>
+              <span style="font-size:10px;color:#475569"> điểm</span>
+            </div>
+            <div class="eptsh" id="ep-ptsh">Click trên bản đồ để bắt đầu vẽ</div>
+          </div>
+          <div class="ep-btns">
+            <button class="epbtn epbtn-s" id="ep-save" disabled onclick="edSaveUnit()">✓ Lưu</button>
+            <button class="epbtn epbtn-c" onclick="edCancel()">✕ Hủy</button>
+          </div>
+        </div>
+        <div class="ep-title" style="border-top:1px solid #1e293b">Danh sách căn <span class="ep-badge" id="ep-list-cnt">0</span></div>
+        <div class="ep-list" id="ep-list"><div class="ep-empty">🏗️<br><br>Chưa có căn nào</div></div>
+        <div class="ep-export">
+          <div class="efl" style="margin-bottom:4px">Export COORDS → paste vào MapConfig Sheet</div>
+          <textarea class="ep-exparea" id="ep-exparea" readonly placeholder="Code xuất ở đây..."></textarea>
+          <div class="ep-exprow">
+            <button class="epbtn epbtn-s" style="flex:2" onclick="edCopy()">📋 Copy Code</button>
+            <button class="epbtn epbtn-c" style="flex:1;font-size:9px" onclick="edSaveSession()">💾 Save</button>
+            <button class="epbtn epbtn-c" style="flex:1;font-size:9px" onclick="edLoadSession()">📂 Load</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-editor -->
+
+</div><!-- /scr-dashboard -->
+
+<script>
+// ════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════
+const REGISTRY_ID = '1vhwwEt5CD7n_lqRBInCag-75o_MwgpHXqsB-xb2xfOY';
+const API_KEY     = 'AIzaSyA0RIegBVbU_FBU5_kCT9IGNswN0f_1b68';
+const AUTO_REFRESH_MIN = 5;
+
+const MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
+const MC = ["#34d399","#059669","#60a5fa","#2563eb","#fbbf24","#d97706","#a78bfa"];
+
+// ════════════════════════════════════════════════
+// APP STATE
+// ════════════════════════════════════════════════
+let PROJECTS = [];       // from Registry
+let CUR = null;          // current project object
+let COORDS = {};         // {id: "x,y x,y ..."}
+let VI = {};             // {id: {type,sub,area,imageUrl}}
+let SD = {}, KL = {};    // status + KL data
+let sel = null, multiSel = new Set();
+let zl = 0.7, klChart = null;
+let refreshTimer = null;
+
+// ════════════════════════════════════════════════
+// HELPER
+// ════════════════════════════════════════════════
+function gapi(sheetId, range) {
+  return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${API_KEY}`)
+    .then(r => r.json());
+}
+
+function driveDirect(url) {
+  if (!url) return '';
+  // https://drive.google.com/file/d/ID/view... → direct
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  // already direct or other format
+  return url;
+}
+
+function fmt(n) { return n >= 1000 ? n.toLocaleString('vi-VN', {maximumFractionDigits:0}) : n.toFixed(1); }
+function pctN(d, t) { return t > 0 ? Math.round(d / t * 100) : 0; }
+function pColor(p) { return p >= 100 ? '#16a34a' : p >= 70 ? '#ca8a04' : '#2563eb'; }
+function mi(m) { return MS.indexOf(m); }
+function gc(id) { const s = SD[id]; if (!s || !s.ms) return '#374151'; const i = mi(s.ms); return i >= 0 ? MC[i] : '#374151'; }
+
+// ════════════════════════════════════════════════
+// SCREEN SWITCHER
+// ════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() {
+  showScreen('scr-selector');
+  if (refreshTimer) clearInterval(refreshTimer);
+  sel = null; multiSel.clear(); CUR = null;
+}
+
+// ════════════════════════════════════════════════
+// REGISTRY: Load project list
+// ════════════════════════════════════════════════
+async function loadRegistry() {
+  const grid = document.getElementById('proj-grid');
+  try {
+    const data = await gapi(REGISTRY_ID, 'Registry!A:F');
+    const rows = (data.values || []).slice(1).filter(r => r[0] && r[2]);
+    PROJECTS = rows.map(r => ({
+      id:       r[0] || '',
+      name:     r[1] || r[0],
+      sheetId:  r[2] || '',
+      color:    r[3] || '#C8A96E',
+      imageUrl: driveDirect(r[4] || ''),
+      apiKey:   r[5] || API_KEY,
+    }));
+
+    if (!PROJECTS.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#334155;font-size:13px">Chưa có dự án nào trong Registry</div>';
+      return;
+    }
+
+    grid.innerHTML = '';
+    PROJECTS.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'proj-card';
+      card.style.setProperty('--c', p.color);
+      card.innerHTML = `
+        <div class="pc-badge">${p.id}</div>
+        <div class="pc-name">${p.name}</div>
+        <div class="pc-sub">Nhấn để xem dashboard</div>
+        <div class="pc-arrow">→</div>
+      `;
+      card.addEventListener('click', () => openProject(p));
+      grid.appendChild(card);
+    });
+
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#ef4444;font-size:12px">Lỗi tải Registry: ${e.message}</div>`;
+  }
+}
+
+// ════════════════════════════════════════════════
+// OPEN PROJECT
+// ════════════════════════════════════════════════
+async function openProject(p) {
+  CUR = p;
+  sel = null; multiSel.clear();
+  COORDS = {}; VI = {}; SD = {}; KL = {};
+
+  // Update header
+  document.getElementById('h-proj-id').textContent = p.id;
+  document.getElementById('h-proj-name').textContent = p.name;
+  document.getElementById('h-proj-id').style.color = p.color;
+
+  // Show dashboard
+  showScreen('scr-dashboard');
+  switchTab('map');
+
+  // Show loading overlay
+  document.getElementById('map-loading').style.display = 'flex';
+  document.getElementById('map-loading-txt').textContent = 'Đang tải dữ liệu...';
+  document.getElementById('lupd').textContent = 'Đang tải...';
+
+  // Reset panel
+  document.getElementById('pe').style.display = '';
+  document.getElementById('pb').classList.remove('show');
+  document.getElementById('mpb').classList.remove('show');
+
+  await loadProjectData();
+
+  // Auto refresh
+  if (refreshTimer) clearInterval(refreshTimer);
+  if (AUTO_REFRESH_MIN > 0) {
+    refreshTimer = setInterval(refreshData, AUTO_REFRESH_MIN * 60000);
+  }
+}
+
+async function refreshData() {
+  if (!CUR) return;
+  await loadProjectData();
+}
+
+async function loadProjectData() {
+  if (!CUR) return;
+  document.getElementById('lupd').textContent = 'Đang tải...';
+  try {
+    const [rStatus, rKL, rMapCfg, rVilla] = await Promise.all([
+      gapi(CUR.sheetId, 'MasterStatus!A:C'),
+      gapi(CUR.sheetId, 'KLTongHop!A:K'),
+      gapi(CUR.sheetId, 'MapConfig!A:B'),
+      gapi(CUR.sheetId, 'VillaInfo!A:E'),
+    ]);
+
+    // ── MasterStatus → SD ──
+    SD = {};
+    const sRows = (rStatus.values || []).slice(1).filter(r => r[0] && r[0] !== 'VillaCode');
+    sRows.sort((a, b) => (b[2] || '').localeCompare(a[2] || ''));
+    sRows.forEach(([c, m, d]) => { if (c && !SD[c]) SD[c] = {ms: m||null, date: d||null}; });
+
+    // ── KLTongHop → KL ──
+    KL = {};
+    (rKL.values || []).slice(2).forEach(row => {
+      const c = row[0]; if (!c || c === 'VillaCode') return;
+      KL[c] = {
+        cd: parseFloat(row[2])||0, cp: parseFloat(row[3])||0,
+        rd: parseFloat(row[5])||0, rp: parseFloat(row[6])||0,
+        fd: parseFloat(row[8])||0, fp: parseFloat(row[9])||0,
+      };
+    });
+
+    // ── MapConfig → COORDS + map image ──
+    COORDS = {};
+    const mapRows = (rMapCfg.values || []).slice(1).filter(r => r[0]);
+    mapRows.forEach(([id, coords]) => { if (id && coords) COORDS[id] = coords; });
+
+    // ── VillaInfo → VI ──
+    VI = {};
+    (rVilla.values || []).slice(1).forEach(row => {
+      const id = row[0]; if (!id) return;
+      VI[id] = {
+        type:     row[1] || '—',
+        sub:      row[2] || '—',
+        area:     row[3] ? row[3] + ' m²' : '—',
+        imageUrl: driveDirect(row[4] || ''),
+      };
+    });
+
+    // ── Setup SVG map (tự gọi renderAll + ẩn loading overlay) ──
+    setupMapSVG();
+    updateProjSummary();
+    document.getElementById('lupd').textContent = 'Cập nhật: ' + new Date().toLocaleTimeString('vi-VN');
+
+  } catch(e) {
+    document.getElementById('map-loading-txt').textContent = 'Lỗi kết nối: ' + e.message;
+    document.getElementById('lupd').textContent = 'Lỗi';
+  }
+}
+
+// ════════════════════════════════════════════════
+// MAP SVG SETUP
+// ════════════════════════════════════════════════
+let mapW = 2000, mapH = 1760;
+
+function applySVGSize(w, h) {
+  mapW = w; mapH = h;
+  const svg = document.getElementById('map-svg');
+  svg.setAttribute('width', mapW);
+  svg.setAttribute('height', mapH);
+  svg.setAttribute('viewBox', `0 0 ${mapW} ${mapH}`);
+  document.getElementById('map-bg').setAttribute('width', mapW);
+  document.getElementById('map-bg').setAttribute('height', mapH);
+  fitMapZoom();
+  renderAll();
+  document.getElementById('map-loading').style.display = 'none';
+}
+
+function setupMapSVG() {
+  const imgEl = document.getElementById('map-img');
+
+  // Luôn set SVG size mặc định ngay — polygon hiện trước, ảnh load sau
+  applySVGSize(mapW, mapH);
+
+  if (CUR.imageUrl) {
+    // Thử load ảnh — nếu được thì update size theo ảnh thật
+    const tmpImg = new Image();
+    tmpImg.crossOrigin = 'anonymous';
+    tmpImg.onload = function() {
+      imgEl.setAttribute('href', CUR.imageUrl);
+      imgEl.setAttribute('width', tmpImg.naturalWidth);
+      imgEl.setAttribute('height', tmpImg.naturalHeight);
+      applySVGSize(tmpImg.naturalWidth, tmpImg.naturalHeight);
+    };
+    tmpImg.onerror = function() {
+      // CORS hoặc không load được — thử set href trực tiếp vào SVG image
+      // (SVG image element ít bị CORS hơn JS Image)
+      imgEl.setAttribute('href', CUR.imageUrl);
+      imgEl.setAttribute('width', mapW);
+      imgEl.setAttribute('height', mapH);
+      // Polygon đã render rồi (từ applySVGSize ở trên), không cần làm gì thêm
+    };
+    tmpImg.src = CUR.imageUrl;
+  } else {
+    imgEl.setAttribute('href', '');
+  }
+}
+
+function fitMapZoom() {
+  const wrap = document.querySelector('.mp');
+  const ww = wrap.clientWidth - 40;
+  const wh = wrap.clientHeight - 40;
+  zl = Math.min(ww / mapW, wh / mapH, 1);
+  applyZoom();
+}
+
+// ════════════════════════════════════════════════
+// MAP RENDER
+// ════════════════════════════════════════════════
+function renderAll() {
+  const g = document.getElementById('pg'); g.innerHTML = '';
+  let tot=0, act=0, done=0, none=0;
+
+  Object.entries(COORDS).forEach(([id, pts]) => {
+    tot++;
+    const s = SD[id], i = s ? mi(s.ms) : -1;
+    if (!s || !s.ms) none++;
+    else if (i === MS.length - 1) done++;
+    else act++;
+
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', gc(id));
+    poly.setAttribute('opacity', '0.82');
+    poly.setAttribute('id', 'p-' + id.replace(/[^a-zA-Z0-9]/g,'-'));
+    if (sel === id) poly.classList.add('sel');
+    if (multiSel.has(id)) poly.classList.add('multi-sel');
+    poly.addEventListener('click', e => handleClick(e, id));
+    g.appendChild(poly);
+
+    // Label
+    const pa = pts.split(' ').map(p => p.split(',').map(Number));
+    const cx = pa.reduce((a,p) => a+p[0], 0) / pa.length;
+    const cy = pa.reduce((a,p) => a+p[1], 0) / pa.length;
+    const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x', cx); lbl.setAttribute('y', cy);
+    lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('dominant-baseline','central');
+    lbl.setAttribute('font-size','7'); lbl.setAttribute('font-weight','700');
+    lbl.setAttribute('fill','#fff'); lbl.setAttribute('pointer-events','none');
+    lbl.textContent = id;
+    g.appendChild(lbl);
+  });
+
+  document.getElementById('s-total').textContent = tot;
+  document.getElementById('s-act').textContent   = act;
+  document.getElementById('s-done').textContent  = done;
+  document.getElementById('s-none').textContent  = none;
+  buildLeg();
+  if (sel) renderPanel(sel);
+}
+
+function buildLeg() {
+  const el = document.getElementById('li'); el.innerHTML = '';
+  const used = new Set(Object.values(SD).map(s => s && s.ms).filter(Boolean));
+  MS.forEach((m, i) => {
+    if (used.has(m)) el.innerHTML += `<div class="lr"><div class="ld" style="background:${MC[i]}"></div>${m}</div>`;
+  });
+}
+
+// ════════════════════════════════════════════════
+// MAP INTERACTIONS
+// ════════════════════════════════════════════════
+function handleClick(e, id) {
+  if (e.ctrlKey || e.metaKey) {
+    if (multiSel.has(id)) multiSel.delete(id); else multiSel.add(id);
+    sel = null; updateSelUI();
+  } else {
+    multiSel.clear(); sel = id;
+    showSinglePanel(id); updateSelUI();
+  }
+  renderAll();
+}
+
+function clearSel() {
+  multiSel.clear(); sel = null;
+  document.getElementById('pe').style.display = '';
+  document.getElementById('pb').classList.remove('show');
+  document.getElementById('mpb').classList.remove('show');
+  updateSelUI(); renderAll();
+}
+
+function updateSelUI() {
+  const n = multiSel.size;
+  const info = document.getElementById('sel-info');
+  if (n > 0) {
+    info.style.display = 'inline-flex';
+    document.getElementById('sel-count').textContent = n;
+    showMultiPanel();
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+function showSinglePanel(id) {
+  const s = SD[id]||{}, vi = VI[id]||{}, i = mi(s.ms);
+  const k = KL[id]||{cd:0,cp:0,rd:0,rp:0,fd:0,fp:0};
+
+  document.getElementById('pe').style.display = 'none';
+  document.getElementById('mpb').classList.remove('show');
+  document.getElementById('pb').classList.add('show');
+
+  // Villa image
+  const wrap = document.getElementById('villa-img-wrap');
+  if (vi.imageUrl) {
+    wrap.innerHTML = `<img class="villa-img" src="${vi.imageUrl}" onerror="this.parentElement.innerHTML='<div class=villa-img-ph>🏡</div>'">`;
+  } else {
+    wrap.innerHTML = '<div class="villa-img-ph">🏡</div>';
+  }
+
+  document.getElementById('pz').textContent  = id.replace(/-\d+$/, '');
+  document.getElementById('pid').textContent = id;
+  document.getElementById('psub').textContent = vi.sub || '—';
+  document.getElementById('ptype').textContent = vi.type || '—';
+  document.getElementById('parea').textContent = vi.area || '—';
+
+  // Status badge
+  const bg = document.getElementById('bdg'), bd = document.getElementById('bdt'), bt = document.getElementById('btxt');
+  if (!s.ms) { bg.style.cssText='background:rgba(255,255,255,.1);color:#94a3b8'; bd.style.background='#475569'; bt.textContent='Chưa bắt đầu'; }
+  else if (i === MS.length-1) { bg.style.cssText='background:rgba(52,211,153,.15);color:#34d399'; bd.style.background='#34d399'; bt.textContent='Hoàn thành'; }
+  else { bg.style.cssText='background:rgba(200,169,110,.2);color:var(--gold)'; bd.style.background='var(--gold)'; bt.textContent='Đang thi công'; }
+
+  // Milestones
+  const me = document.getElementById('pms'); me.innerHTML = '';
+  MS.forEach((m, j) => {
+    const done = i >= j, cur = i === j;
+    const tag = cur ? '<span class="mt cur">Đang làm</span>' : done ? '<span class="mt done">Xong</span>' : '<span class="mt pend">Chưa</span>';
+    me.innerHTML += `<div class="mr"><div class="md" style="background:${(done||cur)?MC[j]:'#374151'}"></div><div class="mn" style="color:${(done||cur)?'var(--text)':'var(--muted)'}">${m}</div>${tag}</div>`;
+  });
+  const pct = i < 0 ? 0 : Math.round((i+1)/MS.length*100);
+  document.getElementById('pbar').style.width = pct + '%';
+  document.getElementById('ppct').textContent = pct + '%';
+
+  // KL chart + bars
+  const pc = pctN(k.cd, k.cp), pr = pctN(k.rd, k.rp), pf = pctN(k.fd, k.fp);
+  if (klChart) klChart.destroy();
+  const ctx = document.getElementById('kl-chart').getContext('2d');
+  klChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Bê tông','Cốt thép','Coppha'],
+      datasets: [
+        {data:[pc,100-pc], backgroundColor:['#60a5fa','#1e3a5f'], borderWidth:0},
+        {data:[pr,100-pr], backgroundColor:['#34d399','#14532d'], borderWidth:0},
+        {data:[pf,100-pf], backgroundColor:['#fbbf24','#451a03'], borderWidth:0},
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'35%',
+      plugins: {
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){
+          const lbls=['Bê tông','Cốt thép','Coppha'],vals=[pc,pr,pf];
+          if(ctx.dataIndex===0) return lbls[ctx.datasetIndex]+': '+vals[ctx.datasetIndex]+'%';
+          return null;
+        }}}
+      }
+    }
+  });
+
+  document.getElementById('kli').innerHTML = [
+    {name:'Bê tông', unit:'m³',  d:k.cd, t:k.cp, p:pc, color:'#60a5fa'},
+    {name:'Cốt thép',unit:'tấn', d:k.rd, t:k.rp, p:pr, color:'#34d399'},
+    {name:'Coppha',  unit:'m²',  d:k.fd, t:k.fp, p:pf, color:'#fbbf24'},
+  ].map(item => `
+    <div class="ki">
+      <div class="kh">
+        <div style="display:flex;align-items:center;gap:5px">
+          <div style="width:7px;height:7px;border-radius:50%;background:${item.color};flex-shrink:0"></div>
+          <span class="kn">${item.name}</span>
+        </div>
+        <div class="kstats">
+          <span class="knum">${fmt(item.d)} / ${fmt(item.t)} ${item.unit}</span>
+          <span class="kpct-badge" style="background:${pColor(item.p)}22;color:${pColor(item.p)}">${item.p}%</span>
+        </div>
+      </div>
+      <div class="kbw"><div class="kb" style="width:${item.p}%;background:${item.color}"></div></div>
+    </div>
+  `).join('');
+
+  document.getElementById('pf').textContent = s.date ? 'Cập nhật: ' + s.date : 'Chưa có dữ liệu';
+}
+
+function showMultiPanel() {
+  document.getElementById('pe').style.display = 'none';
+  document.getElementById('pb').classList.remove('show');
+  document.getElementById('mpb').classList.add('show');
+  const ids = Array.from(multiSel);
+  document.getElementById('mp-count').textContent = ids.length;
+  document.getElementById('mp-sub').textContent = [...new Set(ids.map(id => id.replace(/-\d+$/,'')))].join(', ');
+
+  const maxShow = 5;
+  let tagHTML = ids.slice(0,maxShow).map(id=>`<span class="mp-tag">${id}</span>`).join('');
+  if (ids.length > maxShow) tagHTML += `<span class="mp-tag" style="color:#fbbf24;cursor:pointer" onclick="toggleTagList(this)" data-exp="0">+${ids.length-maxShow} ▾</span>`;
+  document.getElementById('mp-tags').innerHTML = tagHTML;
+  window._mpIds = ids;
+
+  let cd=0,cp=0,rd=0,rp=0,fd=0,fp=0,act=0,done=0,none=0,prog=0;
+  ids.forEach(id => {
+    const k = KL[id]||{cd:0,cp:0,rd:0,rp:0,fd:0,fp:0};
+    const s = SD[id]; const i = s ? mi(s.ms) : -1;
+    cd+=k.cd;cp+=k.cp;rd+=k.rd;rp+=k.rp;fd+=k.fd;fp+=k.fp;
+    if(!s||!s.ms) none++; else if(i===MS.length-1) done++; else act++;
+    prog += i<0?0:Math.round((i+1)/MS.length*100);
+  });
+  const setKL=(pre,d,t,unit)=>{
+    const p=pctN(d,t);
+    document.getElementById(`mp-${pre}-nums`).textContent=`${fmt(d)} / ${fmt(t)} ${unit}`;
+    document.getElementById(`mp-${pre}-pct`).textContent=p+'%';
+    document.getElementById(`mp-${pre}-bar`).style.width=p+'%';
+    document.getElementById(`mp-${pre}-detail`).textContent=`TB/căn: ${ids.length?(d/ids.length).toFixed(1):0} ${unit}`;
+  };
+  setKL('c',cd,cp,'m³'); setKL('r',rd,rp,'tấn'); setKL('f',fd,fp,'m²');
+  document.getElementById('mp-act').textContent  = act;
+  document.getElementById('mp-done').textContent = done;
+  document.getElementById('mp-none').textContent = none;
+  document.getElementById('mp-prog').textContent = ids.length ? Math.round(prog/ids.length)+'%' : '—';
+}
+
+function toggleTagList(el) {
+  const ids = window._mpIds||[]; const exp = el.getAttribute('data-exp')==='1';
+  const maxShow = 5, c = document.getElementById('mp-tags');
+  if (exp) {
+    let h = ids.slice(0,maxShow).map(id=>`<span class="mp-tag">${id}</span>`).join('');
+    h += `<span class="mp-tag" style="color:#fbbf24;cursor:pointer" onclick="toggleTagList(this)" data-exp="0">+${ids.length-maxShow} ▾</span>`;
+    c.innerHTML = h;
+  } else {
+    let h = ids.map(id=>`<span class="mp-tag">${id}</span>`).join('');
+    h += `<span class="mp-tag" style="color:#fbbf24;cursor:pointer" onclick="toggleTagList(this)" data-exp="1">Thu gọn ▴</span>`;
+    c.innerHTML = h;
+  }
+}
+
+function updateProjSummary() {
+  let cd=0,cp=0,rd=0,rp=0,fd=0,fp=0,act=0;
+  const tot = Object.keys(COORDS).length;
+  Object.keys(COORDS).forEach(id => {
+    const k=KL[id],s=SD[id];
+    if(k){cd+=k.cd;cp+=k.cp;rd+=k.rd;rp+=k.rp;fd+=k.fd;fp+=k.fp;}
+    if(s&&s.ms&&mi(s.ms)>=0&&mi(s.ms)<MS.length-1) act++;
+  });
+  const pc=pctN(cd,cp),pr=pctN(rd,rp),pf=pctN(fd,fp);
+  const setBadge=(id,p,bg,fg)=>{const el=document.getElementById(id);el.textContent=p+'%';el.style.background=bg;el.style.color=fg;};
+  document.getElementById('proj-c-done').textContent=fmt(cd);
+  document.getElementById('proj-c-total').textContent='/ '+fmt(cp);
+  document.getElementById('proj-c-bar').style.width=pc+'%';
+  setBadge('proj-c-pct',pc,'#1e3a5f','#60a5fa');
+  document.getElementById('proj-r-done').textContent=fmt(rd);
+  document.getElementById('proj-r-total').textContent='/ '+fmt(rp);
+  document.getElementById('proj-r-bar').style.width=pr+'%';
+  setBadge('proj-r-pct',pr,'#14532d','#34d399');
+  document.getElementById('proj-f-done').textContent=fmt(fd);
+  document.getElementById('proj-f-total').textContent='/ '+fmt(fp);
+  document.getElementById('proj-f-bar').style.width=pf+'%';
+  setBadge('proj-f-pct',pf,'#451a03','#fbbf24');
+  document.getElementById('proj-active').textContent=act;
+  document.getElementById('proj-total-units').textContent=tot;
+}
+
+// ════════════════════════════════════════════════
+// MAP ZOOM & PAN
+// ════════════════════════════════════════════════
+function zoom(f){zl=Math.min(5,Math.max(0.1,zl*f));applyZoom();}
+function resetZoom(){fitMapZoom();}
+function applyZoom(){document.getElementById('mw').style.transform=`scale(${zl})`;}
+
+(function(){
+  const sc=document.getElementById('ms');let drag=false,sx,sy,sl,st;
+  sc.addEventListener('mousedown',e=>{if(e.ctrlKey||e.metaKey)return;if(['polygon','text'].includes(e.target.tagName))return;drag=true;sx=e.clientX;sy=e.clientY;sl=sc.scrollLeft;st=sc.scrollTop;sc.style.cursor='grabbing';});
+  window.addEventListener('mousemove',e=>{if(!drag)return;sc.scrollLeft=sl-(e.clientX-sx);sc.scrollTop=st-(e.clientY-sy);});
+  window.addEventListener('mouseup',()=>{drag=false;sc.style.cursor='';});
+  sc.addEventListener('wheel',e=>{
+    e.preventDefault();const r=sc.getBoundingClientRect();
+    const ix=(e.clientX-r.left+sc.scrollLeft)/zl,iy=(e.clientY-r.top+sc.scrollTop)/zl;
+    zl=Math.min(5,Math.max(0.1,zl*(e.deltaY<0?1.15:0.87)));applyZoom();
+    sc.scrollLeft=ix*zl-(e.clientX-r.left);sc.scrollTop=iy*zl-(e.clientY-r.top);
+  },{passive:false});
+})();
+
+// Rubberband selection
+(function(){
+  const sc=document.getElementById('ms'),rb=document.getElementById('rubberband');
+  let on=false,x0,y0;
+  sc.addEventListener('mousedown',e=>{
+    if(!e.ctrlKey&&!e.metaKey)return;
+    if(e.target.tagName==='polygon'||e.target.tagName==='text')return;
+    on=true;x0=e.clientX;y0=e.clientY;e.preventDefault();e.stopPropagation();
+    rb.style.cssText=`display:block;position:fixed;left:${x0}px;top:${y0}px;width:0;height:0`;
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!on)return;
+    const x=Math.min(e.clientX,x0),y=Math.min(e.clientY,y0);
+    rb.style.left=x+'px';rb.style.top=y+'px';
+    rb.style.width=Math.abs(e.clientX-x0)+'px';rb.style.height=Math.abs(e.clientY-y0)+'px';
+  });
+  window.addEventListener('mouseup',e=>{
+    if(!on)return;on=false;rb.style.display='none';
+    const w=Math.abs(e.clientX-x0),h=Math.abs(e.clientY-y0);if(w<5&&h<5)return;
+    const svg=document.getElementById('map-svg');
+    const toSVG=(cx,cy)=>{const pt=svg.createSVGPoint();pt.x=cx;pt.y=cy;return pt.matrixTransform(svg.getScreenCTM().inverse());};
+    const p1=toSVG(Math.min(e.clientX,x0),Math.min(e.clientY,y0));
+    const p2=toSVG(Math.max(e.clientX,x0),Math.max(e.clientY,y0));
+    Object.entries(COORDS).forEach(([id,pts])=>{
+      const pa=pts.split(' ').map(p=>p.split(',').map(Number));
+      const px=pa.reduce((a,p)=>a+p[0],0)/pa.length,py=pa.reduce((a,p)=>a+p[1],0)/pa.length;
+      if(px>=p1.x&&px<=p2.x&&py>=p1.y&&py<=p2.y)multiSel.add(id);
+    });
+    sel=null;updateSelUI();renderAll();
+  });
+})();
+
+// ════════════════════════════════════════════════
+// TAB SWITCHER
+// ════════════════════════════════════════════════
+function switchTab(t) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.h-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('htab-'+t).classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+// POLYGON EDITOR
+// ════════════════════════════════════════════════
+let edZl=1,edMode='draw',edW=2000,edH=1500;
+let edPts=[],edDrawing=false,edPrevPt=null;
+let edUnits={},edSelId=null,edColorIdx=0;
+const ED_COLS=['#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa','#fb923c','#e879f9','#2dd4bf','#4ade80','#f472b6'];
+const ED_STYPES={'Biệt thự vườn':'Garden Mansion','Dinh thự đồi':'Hillside Mansion','Dinh thự đồi góc':'Corner Hillside Mansion'};
+
+const edSvg = document.getElementById('ed-svg');
+const edCi  = document.getElementById('ed-ci');
+const edCs  = document.getElementById('ed-cs');
+const edImgL = edNs('g'), edPolyL = edNs('g'), edDrawL = edNs('g');
+edSvg.append(edImgL, edPolyL, edDrawL);
+const edBg = edNs('rect'); edBg.setAttribute('fill','#1e293b'); edImgL.appendChild(edBg);
+const edPrevPolyEl = edNs('polygon');
+edPrevPolyEl.setAttribute('fill','rgba(251,191,36,.1)');edPrevPolyEl.setAttribute('stroke','#fbbf24');
+edPrevPolyEl.setAttribute('stroke-width','1.5');edPrevPolyEl.setAttribute('stroke-dasharray','6,3');
+edPrevPolyEl.setAttribute('pointer-events','none'); edDrawL.appendChild(edPrevPolyEl);
+const edCross = edNs('circle');
+edCross.setAttribute('r','4');edCross.setAttribute('fill','none');edCross.setAttribute('stroke','rgba(251,191,36,.6)');
+edCross.setAttribute('stroke-width','1.5');edCross.setAttribute('pointer-events','none'); edDrawL.appendChild(edCross);
+let edDotEls=[];
+
+function edNs(tag){return document.createElementNS('http://www.w3.org/2000/svg',tag);}
+
+function edInitSVG(w,h){
+  edW=w;edH=h;
+  edSvg.setAttribute('width',w);edSvg.setAttribute('height',h);edSvg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  edBg.setAttribute('width',w);edBg.setAttribute('height',h);
+}
+
+document.getElementById('ed-fileinp').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;edLoadImg(URL.createObjectURL(f));
+});
+const edDz=document.getElementById('ed-dropbox');
+edDz.addEventListener('dragover',e=>{e.preventDefault();edDz.classList.add('drag');});
+edDz.addEventListener('dragleave',()=>edDz.classList.remove('drag'));
+edDz.addEventListener('drop',e=>{
+  e.preventDefault();edDz.classList.remove('drag');
+  const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))edLoadImg(URL.createObjectURL(f));
+});
+
+function edLoadImg(url){
+  const i=new Image();
+  i.onload=function(){
+    edInitSVG(i.naturalWidth,i.naturalHeight);
+    const si=edNs('image');si.setAttribute('href',url);si.setAttribute('x',0);si.setAttribute('y',0);
+    si.setAttribute('width',i.naturalWidth);si.setAttribute('height',i.naturalHeight);si.setAttribute('pointer-events','none');
+    edImgL.appendChild(si);
+    document.getElementById('ed-ovl').style.display='none';
+    edFitZoom();
+  };
+  i.src=url;
+}
+
+function edNoImg(){
+  edInitSVG(2000,1500);
+  const g=edNs('g');
+  for(let x=0;x<=edW;x+=100){const l=edNs('line');l.setAttribute('x1',x);l.setAttribute('y1',0);l.setAttribute('x2',x);l.setAttribute('y2',edH);l.setAttribute('stroke','#1e3a5f');l.setAttribute('stroke-width','0.5');g.appendChild(l);}
+  for(let y=0;y<=edH;y+=100){const l=edNs('line');l.setAttribute('x1',0);l.setAttribute('y1',y);l.setAttribute('x2',edW);l.setAttribute('y2',y);l.setAttribute('stroke','#1e3a5f');l.setAttribute('stroke-width','0.5');g.appendChild(l);}
+  edImgL.appendChild(g);
+  document.getElementById('ed-ovl').style.display='none';
+  edFitZoom();
+}
+
+function edFitZoom(){
+  const wrap=document.querySelector('.ed-canvas');
+  const ww=wrap.clientWidth-60,wh=wrap.clientHeight-40;
+  edZl=Math.min(ww/edW,wh/edH);edApplyZoom();
+}
+function edZoom(f){edZl=Math.min(6,Math.max(0.08,edZl*f));edApplyZoom();}
+function edApplyZoom(){edCi.style.transform=`scale(${edZl})`;document.getElementById('ed-zoom').textContent=Math.round(edZl*100)+'%';}
+
+edCs.addEventListener('wheel',e=>{
+  e.preventDefault();const r=edCs.getBoundingClientRect();
+  const ix=(e.clientX-r.left+edCs.scrollLeft)/edZl,iy=(e.clientY-r.top+edCs.scrollTop)/edZl;
+  edZl=Math.min(6,Math.max(0.08,edZl*(e.deltaY<0?1.15:0.87)));edApplyZoom();
+  edCs.scrollLeft=ix*edZl-(e.clientX-r.left);edCs.scrollTop=iy*edZl-(e.clientY-r.top);
+},{passive:false});
+
+let edPanOn=false,edPx0,edPy0,edPsl,edPst;
+edSvg.addEventListener('mousedown',e=>{
+  if(edMode==='pan'||(e.button===0&&e.altKey)){
+    edPanOn=true;edPx0=e.clientX;edPy0=e.clientY;edPsl=edCs.scrollLeft;edPst=edCs.scrollTop;
+    edCs.style.cursor='grabbing';e.preventDefault();
+  }
+});
+window.addEventListener('mousemove',e=>{if(edPanOn){edCs.scrollLeft=edPsl-(e.clientX-edPx0);edCs.scrollTop=edPst-(e.clientY-edPy0);}});
+window.addEventListener('mouseup',()=>{edPanOn=false;edCs.style.cursor=edMode==='pan'?'grab':'crosshair';});
+
+function edSvgPt(e){const r=edSvg.getBoundingClientRect();return{x:(e.clientX-r.left)/edZl,y:(e.clientY-r.top)/edZl};}
+
+edSvg.addEventListener('mousemove',e=>{
+  const p=edSvgPt(e);
+  document.getElementById('ed-xy').textContent=`x:${Math.round(p.x)} y:${Math.round(p.y)}`;
+  edCross.setAttribute('cx',p.x);edCross.setAttribute('cy',p.y);
+  if(edMode==='draw'&&edDrawing){edPrevPt=p;edRenderPreview();}
+});
+
+edSvg.addEventListener('click',e=>{
+  if(edMode!=='draw'||edPanOn)return;
+  const p=edSvgPt(e);
+  if(edPts.length>=3){const d=Math.hypot(p.x-edPts[0].x,p.y-edPts[0].y);if(d<14/edZl){edClosePoly();return;}}
+  edPts.push(p);edDrawing=true;edRenderPreview();edUpdatePtsCtr();
+  document.getElementById('ep-save').disabled=edPts.length<3;
+});
+
+edSvg.addEventListener('dblclick',e=>{
+  if(edMode!=='draw')return;if(edPts.length<3)return;edPts.pop();edClosePoly();
+});
+
+function edClosePoly(){
+  edDrawing=false;edPrevPt=null;edRenderPreview(true);
+  document.getElementById('ep-save').disabled=false;
+  document.getElementById('ep-ptsh').textContent='✓ Đã đóng hình. Nhập ID và bấm Lưu.';
+  document.getElementById('ep-id').focus();
+}
+
+function edRenderPreview(closed){
+  edDotEls.forEach(d=>d.remove());edDotEls=[];
+  const allPts=(!closed&&edPrevPt)?[...edPts,edPrevPt]:edPts;
+  if(allPts.length<2){edPrevPolyEl.removeAttribute('points');return;}
+  edPrevPolyEl.setAttribute('points',allPts.map(p=>`${p.x},${p.y}`).join(' '));
+  edPts.forEach((p,i)=>{
+    const c=edNs('circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);
+    c.setAttribute('r',i===0?7:4);c.setAttribute('fill',i===0?'#fbbf24':'#fff');
+    c.setAttribute('stroke',i===0?'#fff':'#fbbf24');c.setAttribute('stroke-width','1.5');c.setAttribute('pointer-events','none');
+    edDrawL.appendChild(c);edDotEls.push(c);
+    const t=edNs('text');t.setAttribute('x',p.x+8);t.setAttribute('y',p.y-5);
+    t.setAttribute('fill','#fbbf24');t.setAttribute('font-size','10');t.setAttribute('pointer-events','none');
+    t.textContent=i===0?'◆':i+1; edDrawL.appendChild(t);edDotEls.push(t);
+  });
+  if(edPrevPt&&edPts.length>=3){
+    const d=Math.hypot(edPrevPt.x-edPts[0].x,edPrevPt.y-edPts[0].y);
+    if(d<14/edZl){const sn=edNs('circle');sn.setAttribute('cx',edPts[0].x);sn.setAttribute('cy',edPts[0].y);sn.setAttribute('r',12);sn.setAttribute('fill','rgba(251,191,36,.25)');sn.setAttribute('stroke','#fbbf24');sn.setAttribute('stroke-width','2');sn.setAttribute('pointer-events','none');edDrawL.appendChild(sn);edDotEls.push(sn);}
+  }
+}
+
+function edUpdatePtsCtr(){
+  document.getElementById('ep-ptsc').textContent=edPts.length;
+  document.getElementById('ep-ptsh').textContent=edPts.length<3?`Cần thêm ${3-edPts.length} điểm`:'Double-click hoặc click điểm ◆ để đóng';
+}
+
+function edSaveUnit(){
+  const id=document.getElementById('ep-id').value.trim().toUpperCase();
+  if(!id){alert('Nhập mã căn!');return;}if(edPts.length<3){alert('Cần ≥3 điểm!');return;}
+  const type=document.getElementById('ep-type').value;
+  const area=document.getElementById('ep-area').value;
+  const gfa=document.getElementById('ep-gfa').value;
+  const color=ED_COLS[edColorIdx%ED_COLS.length];edColorIdx++;
+  edUnits[id]={pts:[...edPts],type,area,gfa,color};
+  edRenderUnit(id);edRenderList();edUpdateExp();
+  edPts=[];edDrawing=false;edPrevPt=null;
+  edPrevPolyEl.removeAttribute('points');edDotEls.forEach(d=>d.remove());edDotEls=[];
+  document.getElementById('ep-id').value='';document.getElementById('ep-area').value='';document.getElementById('ep-gfa').value='';
+  document.getElementById('ep-save').disabled=true;
+  document.getElementById('ep-ptsc').textContent='0';document.getElementById('ep-ptsh').textContent='Click trên bản đồ để bắt đầu vẽ';
+}
+
+function edRenderUnit(id){
+  const old=document.getElementById('eu-'+id);if(old)old.remove();
+  const u=edUnits[id];
+  const ptsStr=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');
+  const cx=u.pts.reduce((s,p)=>s+p.x,0)/u.pts.length,cy=u.pts.reduce((s,p)=>s+p.y,0)/u.pts.length;
+  const g=edNs('g');g.setAttribute('id','eu-'+id);g.style.cursor='pointer';
+  const poly=edNs('polygon');poly.setAttribute('points',ptsStr);poly.setAttribute('fill',u.color+'2a');poly.setAttribute('stroke',u.color);poly.setAttribute('stroke-width','2');poly.setAttribute('stroke-linejoin','round');
+  const lbl=edNs('text');lbl.setAttribute('x',cx);lbl.setAttribute('y',cy);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('dominant-baseline','middle');lbl.setAttribute('fill','#fff');lbl.setAttribute('font-size','11');lbl.setAttribute('font-weight','600');lbl.setAttribute('pointer-events','none');lbl.textContent=id;
+  g.appendChild(poly);g.appendChild(lbl);edPolyL.appendChild(g);
+  poly.addEventListener('mouseenter',()=>{poly.setAttribute('fill',u.color+'55');});
+  poly.addEventListener('mouseleave',()=>{poly.setAttribute('fill',edSelId===id?u.color+'44':u.color+'2a');});
+}
+
+function edCancel(){
+  edPts=[];edDrawing=false;edPrevPt=null;
+  edPrevPolyEl.removeAttribute('points');edDotEls.forEach(d=>d.remove());edDotEls=[];
+  document.getElementById('ep-save').disabled=true;
+  document.getElementById('ep-ptsc').textContent='0';document.getElementById('ep-ptsh').textContent='Click trên bản đồ để bắt đầu vẽ';
+}
+
+function edUndo(){
+  if(edPts.length>0){edPts.pop();edDrawing=edPts.length>0;edRenderPreview();edUpdatePtsCtr();document.getElementById('ep-save').disabled=edPts.length<3;}
+}
+
+function edRenderList(){
+  const ids=Object.keys(edUnits).sort();
+  document.getElementById('ep-cnt').textContent=ids.length;
+  document.getElementById('ep-list-cnt').textContent=ids.length;
+  const ul=document.getElementById('ep-list');
+  if(!ids.length){ul.innerHTML='<div class="ep-empty">🏗️<br><br>Chưa có căn nào</div>';return;}
+  ul.innerHTML='';
+  ids.forEach(id=>{
+    const u=edUnits[id];
+    const d=document.createElement('div');d.className='ep-item'+(edSelId===id?' ep-sel':'');
+    d.innerHTML=`<div class="ep-ico" style="background:${u.color}"></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:4px"><span class="ep-id">${id}</span></div><div class="ep-type">${u.type}${u.area?' · '+u.area+' m²':''}</div></div><span class="ep-pts">${u.pts.length}pt</span><button class="ep-del" onclick="edDelUnit('${id}',event)">✕</button>`;
+    ul.appendChild(d);
+  });
+}
+
+function edDelUnit(id,e){
+  e.stopPropagation();if(!confirm(`Xóa căn ${id}?`))return;
+  delete edUnits[id];const el=document.getElementById('eu-'+id);if(el)el.remove();
+  if(edSelId===id)edSelId=null;edRenderList();edUpdateExp();
+}
+
+function edUpdateExp(){
+  const ids=Object.keys(edUnits).sort();
+  const lines=ids.map(id=>{
+    const u=edUnits[id];
+    const pts=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');
+    return `  "${id}": "${pts}"`;
+  });
+  document.getElementById('ep-exparea').value=ids.length?`const COORDS={\n${lines.join(',\n')}\n};`:'';
+}
+
+function edCopy(){
+  edUpdateExp();
+  const txt=document.getElementById('ep-exparea').value;
+  if(!txt)return;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=event.target;const orig=b.textContent;b.textContent='✓ Đã copy!';setTimeout(()=>b.textContent=orig,2000);
+  });
+}
+
+function edSaveSession(){
+  const blob=new Blob([JSON.stringify({units:edUnits,W:edW,H:edH})],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${CUR?CUR.id:'editor'}-session.json`;a.click();
+}
+
+function edLoadSession(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);edUnits=d.units||{};edColorIdx=Object.keys(edUnits).length;
+        Object.keys(edUnits).forEach((id,i)=>{if(!edUnits[id].color)edUnits[id].color=ED_COLS[i%ED_COLS.length];});
+        edPolyL.innerHTML='';Object.keys(edUnits).forEach(id=>edRenderUnit(id));edRenderList();edUpdateExp();
+        alert(`✓ Loaded ${Object.keys(edUnits).length} căn!`);
+      }catch(err){alert('Lỗi: '+err.message);}
+    };r.readAsText(f);
+  };inp.click();
+}
+
+const ED_BANNER={'draw':'✏️ VẼ — Click từng góc · Double-click để đóng hình','pan':'✋ DI CHUYỂN — Kéo để pan · Scroll để zoom','sel':'🔲 CHỌN — Click vào căn để xem / xóa'};
+function edSetMode(m){
+  edMode=m;
+  document.querySelectorAll('.etb').forEach(t=>t.classList.remove('active'));
+  const tb=document.getElementById('etb-'+m);if(tb)tb.classList.add('active');
+  edCs.style.cursor=m==='pan'?'grab':'crosshair';
+  document.getElementById('ed-banner').textContent=ED_BANNER[m]||ED_BANNER.draw;
+  document.getElementById('ed-mode').textContent={draw:'VẼ',pan:'PAN',sel:'CHỌN'}[m]||m;
+}
+
+// Editor keyboard shortcuts (only when tab is active)
+document.addEventListener('keydown',e=>{
+  const edActive=document.getElementById('tab-editor').classList.contains('active');
+  if(!edActive)return;
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  if(e.key==='d'||e.key==='D')edSetMode('draw');
+  if(e.key==='s'||e.key==='S')edSetMode('sel');
+  if(e.key===' '){e.preventDefault();edSetMode('pan');}
+  if(e.key==='Escape')edCancel();
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();edUndo();}
+});
+document.addEventListener('keyup',e=>{
+  const edActive=document.getElementById('tab-editor').classList.contains('active');
+  if(e.key===' '&&edActive&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))edSetMode('draw');
+});
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+edInitSVG(2000,1500);
+edSetMode('draw');
+loadRegistry();
+</script>
+</body>
+</html>
