@@ -674,6 +674,8 @@ function switchTab(t){
   document.querySelectorAll('.h-tab').forEach(e=>e.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   document.getElementById('htab-'+t).classList.add('active');
+  // Khi vào editor: reset hoàn toàn và hiện upload overlay
+  if(t==='editor') edResetForProject();
 }
 
 // ════════════════════════════════════════
@@ -1020,6 +1022,56 @@ function edNoImg(){
   edLoadExistingCoords();
 }
 
+function edResetForProject(){
+  // Reset editor hoàn toàn cho dự án mới
+  edUnits={};edPolyL.innerHTML='';edImgL.innerHTML='';edColorIdx=0;edSelId=null;
+  // Reset bg
+  const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
+  edCancel();edRenderList();edUpdateExp();
+  // Nếu dự án có imageUrl → load ảnh tự động, không cần upload
+  if(CUR&&CUR.imageUrl){
+    const ovl=document.getElementById('ed-ovl');
+    ovl.innerHTML='<div style="text-align:center;color:#94a3b8"><div class="spin" style="margin:0 auto 10px"></div><div style="font-size:12px">Đang tải ảnh mặt bằng...</div></div>';
+    ovl.style.display='flex';
+    const img=new Image();
+    img.onload=function(){
+      edInitSVG(img.naturalWidth,img.naturalHeight);
+      const si=edNs('image');si.setAttribute('href',CUR.imageUrl);si.setAttribute('x',0);si.setAttribute('y',0);
+      si.setAttribute('width',img.naturalWidth);si.setAttribute('height',img.naturalHeight);si.setAttribute('pointer-events','none');
+      edImgL.appendChild(si);
+      ovl.style.display='none';edFitZoom();
+      edLoadExistingCoords();
+    };
+    img.onerror=function(){
+      // Ảnh không load được → hiện overlay upload thủ công
+      ovl.innerHTML=`<div class="ed-dropbox" id="ed-dropbox" onclick="document.getElementById('ed-fileinp').click()">
+        <div style="font-size:34px;margin-bottom:6px">🗺️</div>
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:3px">Upload ảnh mặt bằng</div>
+        <div style="font-size:10px;color:#475569;margin-bottom:10px">Ảnh tự động không load được — upload thủ công</div>
+        <button style="font-family:inherit;font-size:10px;padding:6px 18px;border-radius:6px;cursor:pointer;border:none;background:var(--gold);color:#0a0f1a;font-weight:600" onclick="event.stopPropagation();document.getElementById('ed-fileinp').click()">Chọn ảnh</button>
+      </div>
+      <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
+      ovl.style.display='flex';
+      // Vẫn load polygon dù không có ảnh
+      edInitSVG(CUR.imgW||2000,CUR.imgH||1760);
+      edLoadExistingCoords();
+    };
+    img.src=CUR.imageUrl;
+  } else {
+    // Không có imageUrl → hiện overlay upload
+    const ovl=document.getElementById('ed-ovl');
+    ovl.innerHTML=`<div class="ed-dropbox" id="ed-dropbox" onclick="document.getElementById('ed-fileinp').click()">
+      <div style="font-size:34px;margin-bottom:6px">🗺️</div>
+      <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:3px">Upload ảnh mặt bằng</div>
+      <div style="font-size:10px;color:#475569;margin-bottom:10px">PNG / JPG — kéo thả hoặc click</div>
+      <button style="font-family:inherit;font-size:10px;padding:6px 18px;border-radius:6px;cursor:pointer;border:none;background:var(--gold);color:#0a0f1a;font-weight:600" onclick="event.stopPropagation();document.getElementById('ed-fileinp').click()">Chọn ảnh</button>
+    </div>
+    <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
+    ovl.style.display='flex';
+    edLoadExistingCoords();
+  }
+}
+
 function edLoadExistingCoords(){
   // Load polygon hiện có từ dự án đang mở
   if(!CUR||!Object.keys(COORDS).length)return;
@@ -1033,7 +1085,7 @@ function edLoadExistingCoords(){
     edColorIdx++;edRenderUnit(id);
   });
   edRenderList();edUpdateExp();
-  toast(`Đã load ${Object.keys(edUnits).length} căn từ ${CUR.name}`);
+  if(Object.keys(edUnits).length)toast(`Đã load ${Object.keys(edUnits).length} căn từ ${CUR.name}`);
 }
 
 function edFitZoom(){const wrap=document.querySelector('.ed-canvas');const ww=wrap.clientWidth-50,wh=wrap.clientHeight-30;edZl=Math.min(ww/edW,wh/edH);edApplyZoom();}
