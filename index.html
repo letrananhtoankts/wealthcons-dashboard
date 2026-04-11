@@ -65,6 +65,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--dark);color:var(--
 
 .sel-footer{text-align:center;font-size:10px;color:#1e293b;margin-top:16px}
 .sel-footer span{color:#334155}
+.app-footer{position:fixed;bottom:0;left:0;right:0;text-align:center;padding:4px;font-size:9px;color:#1e293b;background:transparent;pointer-events:none;z-index:999;letter-spacing:.04em}
 
 /* ── GLOBAL HEADER ── */
 header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;z-index:50}
@@ -181,7 +182,7 @@ header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;displ
 .mp-kl{padding:12px 14px;flex:1}
 .mp-kl-item{margin-bottom:12px}
 .mp-kl-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.mp-kl-name{font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;color:#fff}
+.mp-kl-name{font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;color:#1e293b}
 .mp-kl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
 .mp-kl-nums{font-size:10px;color:var(--muted)}
 .mp-kl-pct{font-size:10px;font-weight:700;padding:2px 8px;border-radius:7px;color:#fff}
@@ -410,7 +411,7 @@ option{background:#0f172a}
         <div class="pe" id="pe"><div class="peico">🏡</div><h3>Chọn căn hộ</h3><p>Click vào căn trên bản đồ<br>để xem chi tiết tiến độ</p></div>
         <div class="pb" id="pb">
           <div id="villa-img-wrap"></div>
-          <div class="phdr"><div class="pz" id="pz">—</div><div class="pid" id="pid">—</div><div class="psub" id="psub">—</div><div class="badge" id="bdg"><div class="bdot" id="bdt"></div><span id="btxt">—</span></div></div>
+          <div class="phdr"><div class="pz" id="pz">—</div><div class="pid" id="pid">—</div><div class="psub" id="psub">—</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div class="badge" id="bdg"><div class="bdot" id="bdt"></div><span id="btxt">—</span></div><button id="btn-update-progress" onclick="openProgressForm()" style="display:none;font-family:inherit;font-size:9px;padding:3px 9px;border-radius:10px;cursor:pointer;border:none;background:rgba(59,130,246,.2);color:#60a5fa;font-weight:600">📝 Cập nhật</button></div></div>
           <div class="ig"><div class="ic"><div class="icl">Loại căn</div><div class="icv" id="ptype">—</div></div><div class="ic"><div class="icl">Diện tích</div><div class="icv" id="parea">—</div></div></div>
           <div class="ps"><div class="sttl">Mốc thi công</div><div id="pms"></div><div class="pbw"><div class="pb2" id="pbar" style="width:0%"></div></div><div class="pp" id="ppct">0%</div></div>
           <div class="kls"><div class="sttl">Khối lượng</div><div class="kl-chart-wrap"><canvas id="kl-chart"></canvas></div><div id="kli"></div></div>
@@ -525,8 +526,14 @@ option{background:#0f172a}
               <div style="flex:1"><div class="afl">ImgW (px)</div><input class="afi" id="a-imgw" placeholder="2000"></div>
               <div style="flex:1"><div class="afl">ImgH (px)</div><input class="afi" id="a-imgh" placeholder="1760"></div>
             </div>
-            <div class="afl">Image URL (ảnh mặt bằng — raw GitHub hoặc direct link)</div>
-            <input class="afi" id="a-imgurl" placeholder="https://raw.githubusercontent.com/...">
+            <div class="afl">Image URL (ảnh mặt bằng)</div>
+            <input class="afi" id="a-imgurl" placeholder="https://raw.githubusercontent.com/username/repo/main/matbang.jpg">
+            <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;margin-top:4px;font-size:10px;color:#64748b;line-height:1.7">
+              💡 <b style="color:#94a3b8">Cách lấy link hợp chuẩn:</b><br>
+              • Upload ảnh lên GitHub repo → mở file → đổi <code style="color:#60a5fa">blob</code> thành <code style="color:#60a5fa">raw</code> trong URL<br>
+              • VD: <code style="color:#34d399">raw.githubusercontent.com/username/repo/main/matbang.jpg</code><br>
+              ⚠ <b style="color:#f87171">Google Drive link không dùng được</b> do CORS browser
+            </div>
             <div class="abtns">
               <button class="abtn abtn-primary" onclick="adminAddProject()">➕ Thêm vào Registry</button>
               <button class="abtn abtn-outline" onclick="adminClearForm()">Xóa form</button>
@@ -562,8 +569,10 @@ const API_KEY     = 'AIzaSyA0RIegBVbU_FBU5_kCT9IGNswN0f_1b68';
 const CLIENT_ID   = '775858800222-53qik12lr7slpb8ghctg617nqti9t4l4.apps.googleusercontent.com';
 const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets';
 const AUTO_REFRESH_MIN = 5;
-const MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
-const MC = ["#34d399","#059669","#60a5fa","#2563eb","#fbbf24","#d97706","#a78bfa"];
+// MS/MC loaded dynamically from MilestoneConfig Sheet
+let MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
+let MC = ["#34d399","#059669","#60a5fa","#2563eb","#fbbf24","#d97706","#a78bfa"];
+let UNIT_TYPES = [{code:'BTV',name:'Biệt thự vườn'},{code:'DTD',name:'Dinh thự đồi'},{code:'DTG',name:'Dinh thự đồi góc'}];
 
 // ════════════════════════════════════════
 // STATE
@@ -572,7 +581,7 @@ let PROJECTS=[], CUR=null, COORDS={}, VI={}, SD={}, KL={};
 let sel=null, multiSel=new Set(), zl=0.7, klChart=null, refreshTimer=null;
 let mapW=2000, mapH=1760;
 // Auth
-let authToken=null, authUser=null, tokenClient=null;
+let authToken=null, authUser=null, tokenClient=null, userRole='viewer';
 
 // ════════════════════════════════════════
 // HELPERS
@@ -616,9 +625,14 @@ function initAuth(){
     callback:(resp)=>{
       if(resp.error){toast('Đăng nhập thất bại: '+resp.error,'err');return;}
       authToken=resp.access_token;
-      // Get user info
+      // Get user info then check whitelist
       fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+authToken}})
-        .then(r=>r.json()).then(u=>{authUser=u;updateAuthUI();toast('Đã đăng nhập: '+u.name);});
+        .then(r=>r.json()).then(async u=>{
+          authUser=u;
+          await checkWhitelist(u.email);
+          updateAuthUI();
+          toast('Đã đăng nhập: '+u.name+' ('+userRole+')');
+        });
     }
   });
 }
@@ -629,8 +643,20 @@ function signIn(){
 }
 function signOut(){
   if(authToken)google.accounts.oauth2.revoke(authToken);
-  authToken=null;authUser=null;updateAuthUI();toast('Đã đăng xuất');
+  authToken=null;authUser=null;userRole='viewer';updateAuthUI();toast('Đã đăng xuất');
 }
+
+async function checkWhitelist(email){
+  try{
+    const data=await gapi(REGISTRY_ID,'Whitelist!A:B');
+    const rows=(data.values||[]).slice(1).filter(r=>r[0]);
+    const found=rows.find(r=>r[0].trim().toLowerCase()===email.toLowerCase());
+    userRole=found?( found[1]||'viewer').toLowerCase():'viewer';
+  }catch(e){userRole='viewer';}
+}
+
+function canEdit(){return userRole==='admin'||userRole==='editor';}
+function isAdmin(){return userRole==='admin';}
 
 function updateAuthUI(){
   const logged=!!authUser;
@@ -640,20 +666,28 @@ function updateAuthUI(){
   document.getElementById('btn-login-home').style.display=logged?'none':'';
   if(logged){
     document.getElementById('auth-avatar-home').src=authUser.picture||'';
-    document.getElementById('auth-name-home').textContent=authUser.name||'';
+    document.getElementById('auth-name-home').textContent=authUser.name||' ('+userRole+')';
   }
   // Header mini
   const av=document.getElementById('h-avatar');
-  if(logged){av.src=authUser.picture||'';av.style.display='';document.getElementById('h-auth-name').textContent=authUser.given_name||'';}
+  if(logged){av.src=authUser.picture||'';av.style.display='';document.getElementById('h-auth-name').textContent=(authUser.given_name||'')+' · '+userRole;}
   else{av.style.display='none';document.getElementById('h-auth-name').textContent='';}
-  // Admin tab
-  document.getElementById('admin-lock').style.display=logged?'none':'flex';
-  document.getElementById('admin-content').style.display=logged?'block':'none';
-  if(logged)adminLoadProjects();
+  // Tab visibility theo role
+  const tabEditor=document.getElementById('htab-editor');
+  const tabAdmin=document.getElementById('htab-admin');
+  if(tabEditor) tabEditor.style.display=isAdmin()?'':'none';
+  if(tabAdmin)  tabAdmin.style.display=isAdmin()?'':'none';
+  // Nút cập nhật tiến độ
+  const btnUpdate=document.getElementById('btn-update-progress');
+  if(btnUpdate) btnUpdate.style.display=canEdit()?'':'none';
+  // Admin tab content
+  document.getElementById('admin-lock').style.display=isAdmin()?'none':'flex';
+  document.getElementById('admin-content').style.display=isAdmin()?'block':'none';
+  if(isAdmin())adminLoadProjects();
   // Add card
   document.querySelectorAll('.proj-card-add').forEach(c=>{
-    c.classList.toggle('locked',!logged);
-    c.title=logged?'':'Đăng nhập để thêm dự án';
+    c.classList.toggle('locked',!isAdmin());
+    c.title=isAdmin()?'':'Cần quyền admin';
   });
 }
 
@@ -739,12 +773,29 @@ async function loadProjectData(){
   if(!CUR)return;
   document.getElementById('lupd').textContent='Đang tải...';
   try{
-    const[rS,rK,rM,rV]=await Promise.all([
+    const[rS,rK,rM,rV,rMS,rUT]=await Promise.all([
       gapi(CUR.sheetId,'MasterStatus!A:C'),
       gapi(CUR.sheetId,'KLTongHop!A:K'),
       gapi(CUR.sheetId,'MapConfig!A:B'),
       gapi(CUR.sheetId,'VillaInfo!A:E'),
+      gapi(CUR.sheetId,'MilestoneConfig!A:E'),
+      gapi(CUR.sheetId,'UnitTypeConfig!A:D'),
     ]);
+    // Load MilestoneConfig → MS, MC
+    const msRows=(rMS.values||[]).slice(1).filter(r=>r[0]!=='');
+    if(msRows.length){
+      msRows.sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
+      MS=msRows.map(r=>r[2]||'');
+      MC=msRows.map(r=>r[3]||'#94a3b8');
+    }
+    // Load UnitTypeConfig → UNIT_TYPES
+    const utRows=(rUT.values||[]).slice(1).filter(r=>r[0]!=='');
+    if(utRows.length){
+      UNIT_TYPES=utRows.map(r=>({code:r[0]||'',name:r[1]||'',nameEN:r[2]||'',floors:parseInt(r[3])||0}));
+      // Update editor dropdown
+      const sel=document.getElementById('ep-type');
+      if(sel){sel.innerHTML=UNIT_TYPES.map(t=>`<option value="${t.code}">${t.name}${t.nameEN?' | '+t.nameEN:''}</option>`).join('');}
+    }
     SD={};
     const sRows=(rS.values||[]).slice(1).filter(r=>r[0]&&r[0]!=='VillaCode');
     sRows.sort((a,b)=>(b[2]||'').localeCompare(a[2]||''));
@@ -865,6 +916,9 @@ function showSinglePanel(id){
   klChart=new Chart(ctx,{type:'doughnut',data:{labels:['BT','CT','CF'],datasets:[{data:[pc,100-pc],backgroundColor:['#60a5fa','#1e3a5f'],borderWidth:0},{data:[pr,100-pr],backgroundColor:['#34d399','#14532d'],borderWidth:0},{data:[pf,100-pf],backgroundColor:['#fbbf24','#451a03'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'35%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){const v=[pc,pr,pf];if(c.dataIndex===0)return['Bê tông','Cốt thép','Coppha'][c.datasetIndex]+': '+v[c.datasetIndex]+'%';return null;}}}}}});
   document.getElementById('kli').innerHTML=[{name:'Bê tông',unit:'m³',d:k.cd,t:k.cp,p:pc,color:'#60a5fa'},{name:'Cốt thép',unit:'tấn',d:k.rd,t:k.rp,p:pr,color:'#34d399'},{name:'Coppha',unit:'m²',d:k.fd,t:k.fp,p:pf,color:'#fbbf24'}].map(item=>`<div class="ki"><div class="kh"><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:${item.color};flex-shrink:0"></div><span class="kn">${item.name}</span></div><div class="kstats"><span class="knum">${fmt(item.d)} / ${fmt(item.t)} ${item.unit}</span><span class="kpct-badge" style="background:${pColor(item.p)}22;color:${pColor(item.p)}">${item.p}%</span></div></div><div class="kbw"><div class="kb" style="width:${item.p}%;background:${item.color}"></div></div></div>`).join('');
   document.getElementById('pf').textContent=s.date?'Cập nhật: '+s.date:'Chưa có dữ liệu';
+  // Show/hide update button based on role
+  const btnUp=document.getElementById('btn-update-progress');
+  if(btnUp) btnUp.style.display=canEdit()?'':'none';
 }
 
 function showMultiPanel(){
@@ -905,6 +959,29 @@ function updateProjSummary(){
   window.addEventListener('mousemove',e=>{if(!drag)return;sc.scrollLeft=sl-(e.clientX-sx);sc.scrollTop=st-(e.clientY-sy);});
   window.addEventListener('mouseup',()=>{drag=false;sc.style.cursor='';});
   sc.addEventListener('wheel',e=>{e.preventDefault();const r=sc.getBoundingClientRect();const ix=(e.clientX-r.left+sc.scrollLeft)/zl,iy=(e.clientY-r.top+sc.scrollTop)/zl;zl=Math.min(5,Math.max(0.1,zl*(e.deltaY<0?1.15:0.87)));applyZoom();sc.scrollLeft=ix*zl-(e.clientX-r.left);sc.scrollTop=iy*zl-(e.clientY-r.top);},{passive:false});
+  // Touch support (pinch zoom + pan)
+  let t0=null,d0=0,zl0=0,cx0=0,cy0=0;
+  sc.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      t0=e.touches;d0=Math.hypot(t0[1].clientX-t0[0].clientX,t0[1].clientY-t0[0].clientY);
+      zl0=zl;cx0=(t0[0].clientX+t0[1].clientX)/2;cy0=(t0[0].clientY+t0[1].clientY)/2;
+    } else if(e.touches.length===1){
+      drag=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY;sl=sc.scrollLeft;st=sc.scrollTop;
+    }
+  },{passive:true});
+  sc.addEventListener('touchmove',e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
+      const r=sc.getBoundingClientRect();
+      const ix=(cx0-r.left+sc.scrollLeft)/zl,iy=(cy0-r.top+sc.scrollTop)/zl;
+      zl=Math.min(5,Math.max(0.1,zl0*(d/d0)));applyZoom();
+      sc.scrollLeft=ix*zl-(cx0-r.left);sc.scrollTop=iy*zl-(cy0-r.top);
+    } else if(e.touches.length===1&&drag){
+      sc.scrollLeft=sl-(e.touches[0].clientX-sx);sc.scrollTop=st-(e.touches[0].clientY-sy);
+    }
+  },{passive:false});
+  sc.addEventListener('touchend',()=>{drag=false;t0=null;});
 })();
 (function(){
   const sc=document.getElementById('ms'),rb=document.getElementById('rubberband');let on=false,x0,y0;
@@ -1210,10 +1287,33 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{const edActive=document.getElementById('tab-editor').classList.contains('active');if(e.key===' '&&edActive&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))edSetMode('draw');});
 
 // ════════════════════════════════════════
+// PROGRESS FORM
+// ════════════════════════════════════════
+function openProgressForm(){
+  if(!sel||!CUR)return;
+  // Google Form pre-fill URL
+  // Bạn cần update FORM_URL với Form ID thực tế
+  const FORM_URL='https://docs.google.com/forms/d/15NRhIOQAKG3ztid6TEr65rGtv9J-W4Nmux3C3ONWQnM/viewform';
+  // Pre-fill entry IDs - cần lấy từ Form (inspect element)
+  // Tạm thời mở Form không pre-fill, user tự chọn
+  window.open(FORM_URL,'_blank');
+}
+
+// ════════════════════════════════════════
+// PROGRESS FORM
+// ════════════════════════════════════════
+function openProgressForm(){
+  if(!sel||!CUR)return;
+  const FORM_URL='https://docs.google.com/forms/d/15NRhIOQAKG3ztid6TEr65rGtv9J-W4Nmux3C3ONWQnM/viewform';
+  window.open(FORM_URL,'_blank');
+}
+
+// ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
 edInitSVG(2000,1500);edSetMode('draw');
 loadRegistry();
 </script>
+<div class="app-footer">© 2026 Lê Trần Anh Toàn · WEALTHCONS Construction</div>
 </body>
 </html>
