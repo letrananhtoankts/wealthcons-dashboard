@@ -411,7 +411,32 @@ option{background:#0f172a}
         <div class="pe" id="pe"><div class="peico">🏡</div><h3>Chọn căn hộ</h3><p>Click vào căn trên bản đồ<br>để xem chi tiết tiến độ</p></div>
         <div class="pb" id="pb">
           <div id="villa-img-wrap"></div>
-          <div class="phdr"><div class="pz" id="pz">—</div><div class="pid" id="pid">—</div><div class="psub" id="psub">—</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div class="badge" id="bdg"><div class="bdot" id="bdt"></div><span id="btxt">—</span></div><button id="btn-update-progress" onclick="openProgressForm()" style="display:none;font-family:inherit;font-size:9px;padding:3px 9px;border-radius:10px;cursor:pointer;border:none;background:rgba(59,130,246,.2);color:#60a5fa;font-weight:600">📝 Cập nhật</button></div></div>
+          <div class="phdr">
+            <div class="pz" id="pz">—</div>
+            <div class="pid" id="pid">—</div>
+            <div class="psub" id="psub">—</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <div class="badge" id="bdg"><div class="bdot" id="bdt"></div><span id="btxt">—</span></div>
+            </div>
+            <!-- Mini-form cập nhật tiến độ -->
+            <div id="progress-form" style="display:none;margin-top:10px;background:rgba(255,255,255,.06);border-radius:8px;padding:10px">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#93c5fd;margin-bottom:7px">📝 Cập nhật tiến độ</div>
+              <div style="margin-bottom:6px">
+                <div style="font-size:8px;color:#64748b;margin-bottom:3px">Mốc thi công</div>
+                <select id="pf-milestone" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;padding:5px 8px;font-size:11px;color:#e2e8f0;font-family:inherit;outline:none"></select>
+              </div>
+              <div style="margin-bottom:8px">
+                <div style="font-size:8px;color:#64748b;margin-bottom:3px">Ngày cập nhật</div>
+                <input id="pf-date" type="date" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;padding:5px 8px;font-size:11px;color:#e2e8f0;font-family:inherit;outline:none">
+              </div>
+              <div style="display:flex;gap:6px">
+                <button onclick="submitProgress()" style="flex:2;font-family:inherit;font-size:11px;padding:7px;border-radius:6px;cursor:pointer;border:none;background:#10b981;color:#fff;font-weight:600">✓ Ghi lên Sheet</button>
+                <button onclick="cancelProgress()" style="flex:1;font-family:inherit;font-size:11px;padding:7px;border-radius:6px;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b">✕ Hủy</button>
+              </div>
+            </div>
+            <!-- Nút mở mini-form -->
+            <button id="btn-update-progress" onclick="toggleProgressForm()" style="display:none;width:100%;margin-top:8px;font-family:inherit;font-size:11px;padding:6px;border-radius:6px;cursor:pointer;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.15);color:#60a5fa;font-weight:600">📝 Cập nhật tiến độ</button>
+          </div>
           <div class="ig"><div class="ic"><div class="icl">Loại căn</div><div class="icv" id="ptype">—</div></div><div class="ic"><div class="icl">Diện tích</div><div class="icv" id="parea">—</div></div></div>
           <div class="ps"><div class="sttl">Mốc thi công</div><div id="pms"></div><div class="pbw"><div class="pb2" id="pbar" style="width:0%"></div></div><div class="pp" id="ppct">0%</div></div>
           <div class="kls"><div class="sttl">Khối lượng</div><div class="kl-chart-wrap"><canvas id="kl-chart"></canvas></div><div id="kli"></div></div>
@@ -567,7 +592,7 @@ option{background:#0f172a}
 const REGISTRY_ID = '1vhwwEt5CD7n_lqRBInCag-75o_MwgpHXqsB-xb2xfOY';
 const API_KEY     = 'AIzaSyA0RIegBVbU_FBU5_kCT9IGNswN0f_1b68';
 const CLIENT_ID   = '775858800222-53qik12lr7slpb8ghctg617nqti9t4l4.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets';
 const AUTO_REFRESH_MIN = 5;
 // MS/MC loaded dynamically from MilestoneConfig Sheet
 let MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
@@ -919,6 +944,10 @@ function showSinglePanel(id){
   // Show/hide update button based on role
   const btnUp=document.getElementById('btn-update-progress');
   if(btnUp) btnUp.style.display=canEdit()?'':'none';
+  // Reset form khi chọn căn khác
+  const pf=document.getElementById('progress-form');
+  if(pf) pf.style.display='none';
+  if(btnUp&&canEdit()) btnUp.textContent='📝 Cập nhật tiến độ';
 }
 
 function showMultiPanel(){
@@ -1302,10 +1331,66 @@ function openProgressForm(){
 // ════════════════════════════════════════
 // PROGRESS FORM
 // ════════════════════════════════════════
-function openProgressForm(){
-  if(!sel||!CUR)return;
-  const FORM_URL='https://docs.google.com/forms/d/15NRhIOQAKG3ztid6TEr65rGtv9J-W4Nmux3C3ONWQnM/viewform';
-  window.open(FORM_URL,'_blank');
+function toggleProgressForm(){
+  const form=document.getElementById('progress-form');
+  const btn=document.getElementById('btn-update-progress');
+  const isOpen=form.style.display!=='none';
+  if(isOpen){
+    form.style.display='none';
+    btn.textContent='📝 Cập nhật tiến độ';
+  } else {
+    // Populate milestone dropdown
+    const pfMs=document.getElementById('pf-milestone');
+    pfMs.innerHTML=MS.map(m=>`<option value="${m}">${m}</option>`).join('');
+    // Set current milestone if exists
+    const cur=SD[sel];
+    if(cur&&cur.ms){
+      const idx=MS.indexOf(cur.ms);
+      if(idx>=0) pfMs.selectedIndex=idx;
+      // Default to next milestone
+      if(idx>=0&&idx<MS.length-1) pfMs.selectedIndex=idx+1;
+    }
+    // Set today's date
+    const today=new Date();
+    const dd=String(today.getDate()).padStart(2,'0');
+    const mm=String(today.getMonth()+1).padStart(2,'0');
+    const yyyy=today.getFullYear();
+    document.getElementById('pf-date').value=`${yyyy}-${mm}-${dd}`;
+    form.style.display='block';
+    btn.textContent='▲ Đóng';
+  }
+}
+
+function cancelProgress(){
+  document.getElementById('progress-form').style.display='none';
+  document.getElementById('btn-update-progress').textContent='📝 Cập nhật tiến độ';
+}
+
+async function submitProgress(){
+  if(!sel||!CUR){toast('Chưa chọn căn','err');return;}
+  if(!authToken){toast('Cần đăng nhập','err');return;}
+  const milestone=document.getElementById('pf-milestone').value;
+  const dateVal=document.getElementById('pf-date').value;
+  if(!milestone||!dateVal){toast('Vui lòng chọn mốc và ngày','err');return;}
+  // Format date dd/mm/yyyy
+  const[y,m,d]=dateVal.split('-');
+  const dateStr=`${d}/${m}/${y}`;
+  const btn=event.target;
+  btn.disabled=true;btn.textContent='Đang ghi...';
+  try{
+    await gapiWrite(CUR.sheetId,'MasterStatus!A:C',[[sel,milestone,dateStr]]);
+    toast(`✓ Đã cập nhật ${sel} → ${milestone}`);
+    cancelProgress();
+    // Update local state ngay
+    SD[sel]={ms:milestone,date:dateStr};
+    renderAll();
+    showSinglePanel(sel);
+    updateProjSummary();
+  }catch(e){
+    toast('Lỗi ghi Sheet: '+e.message,'err');
+  }finally{
+    btn.disabled=false;btn.textContent='✓ Ghi lên Sheet';
+  }
 }
 
 // ════════════════════════════════════════
