@@ -945,8 +945,8 @@ function showSinglePanel(id){
   const btnUp=document.getElementById('btn-update-progress');
   if(btnUp) btnUp.style.display=canEdit()?'':'none';
   // Reset form khi chọn căn khác
-  const pf=document.getElementById('progress-form');
-  if(pf) pf.style.display='none';
+  const pfEl=document.getElementById('progress-form');
+  if(pfEl) pfEl.style.display='none';
   if(btnUp&&canEdit()) btnUp.textContent='📝 Cập nhật tiến độ';
 }
 
@@ -1373,8 +1373,8 @@ async function submitProgress(){
   const dateVal=document.getElementById('pf-date').value;
   if(!milestone||!dateVal){toast('Vui lòng chọn mốc và ngày','err');return;}
   // Format date dd/mm/yyyy
-  const[y,m,d]=dateVal.split('-');
-  const dateStr=`${d}/${m}/${y}`;
+  const[yr,mo,dy]=dateVal.split('-');
+  const dateStr=`${dy}/${mo}/${yr}`;
   const btn=event.target;
   btn.disabled=true;btn.textContent='Đang ghi...';
   try{
