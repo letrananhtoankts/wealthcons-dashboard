@@ -1384,7 +1384,7 @@ async function submitProgress(){
     // Update local state ngay
     SD[sel]={ms:milestone,date:dateStr};
     renderAll();
-    showSinglePanel(sel);
+    renderPanel(sel);
     updateProjSummary();
   }catch(e){
     toast('Lỗi ghi Sheet: '+e.message,'err');
