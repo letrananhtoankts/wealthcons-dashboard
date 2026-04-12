@@ -488,6 +488,14 @@ option{background:#0f172a}
           <div class="efl">Loại căn</div>
           <select class="efi" id="ep-type"><option value="Biệt thự vườn">Biệt thự vườn</option><option value="Dinh thự đồi">Dinh thự đồi</option><option value="Dinh thự đồi góc">Dinh thự đồi góc</option></select>
           <div style="display:flex;gap:4px"><div style="flex:1"><div class="efl">Diện tích</div><input class="efi" id="ep-area" placeholder="160 m²"></div><div style="flex:1"><div class="efl">Image URL</div><input class="efi" id="ep-imgurl" placeholder="https://..."></div></div>
+          <!-- KL Table -->
+          <div class="efl" style="margin-top:6px;margin-bottom:4px">KL dự toán cộng dồn theo mốc (m³ / tấn / m²)</div>
+          <div id="ep-kl-table" style="background:#0a0f1a;border:1px solid #1e293b;border-radius:6px;overflow:hidden;margin-bottom:6px">
+            <div style="display:grid;grid-template-columns:1fr 60px 60px 60px;gap:0;font-size:8px;font-weight:700;color:#475569;text-transform:uppercase;padding:5px 6px;border-bottom:1px solid #1e293b;background:#0f172a">
+              <span>Mốc</span><span style="text-align:center">BT</span><span style="text-align:center">CT</span><span style="text-align:center">CF</span>
+            </div>
+            <div id="ep-kl-rows" style="max-height:160px;overflow-y:auto"></div>
+          </div>
           <div class="epts"><div><span class="eptsn" id="ep-ptsc">0</span><span style="font-size:9px;color:#475569"> điểm</span></div><div class="eptsh" id="ep-ptsh">Click bản đồ để bắt đầu vẽ</div></div>
           <div class="ep-btns">
             <button class="epbtn epbtn-s" id="ep-save" disabled onclick="edSaveUnit()">✓ Lưu</button>
@@ -597,6 +605,8 @@ const AUTO_REFRESH_MIN = 5;
 // MS/MC loaded dynamically from MilestoneConfig Sheet
 let MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
 let MC = ["#34d399","#059669","#60a5fa","#2563eb","#fbbf24","#d97706","#a78bfa"];
+let MS_CODES = ["MONG","1F","COT2F","2F","COT3F","3F","MAI"];
+let MS_APPLY = ["ALL","ALL","ALL","ALL","BTV","BTV","ALL"];
 let UNIT_TYPES = [{code:'BTV',name:'Biệt thự vườn'},{code:'DTD',name:'Dinh thự đồi'},{code:'DTG',name:'Dinh thự đồi góc'}];
 
 // ════════════════════════════════════════
@@ -734,7 +744,7 @@ function switchTab(t){
   document.getElementById('tab-'+t).classList.add('active');
   document.getElementById('htab-'+t).classList.add('active');
   // Khi vào editor: reset hoàn toàn và hiện upload overlay
-  if(t==='editor') edResetForProject();
+  if(t==='editor'){edResetForProject();setTimeout(edBuildKLTable,500);}
 }
 
 // ════════════════════════════════════════
@@ -806,12 +816,14 @@ async function loadProjectData(){
       gapi(CUR.sheetId,'MilestoneConfig!A:E'),
       gapi(CUR.sheetId,'UnitTypeConfig!A:D'),
     ]);
-    // Load MilestoneConfig → MS, MC
+    // Load MilestoneConfig → MS, MC, MS_CODES, MS_APPLY
     const msRows=(rMS.values||[]).slice(1).filter(r=>r[0]!=='');
     if(msRows.length){
       msRows.sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
-      MS=msRows.map(r=>r[2]||'');
-      MC=msRows.map(r=>r[3]||'#94a3b8');
+      MS=msRows.map(r=>r[2]||'');           // MilestoneName (hiển thị)
+      MC=msRows.map(r=>r[3]||'#94a3b8');   // Color
+      MS_CODES=msRows.map(r=>r[1]||'');    // MilestoneCode (ngắn)
+      MS_APPLY=msRows.map(r=>r[4]||'ALL'); // ApplyTo
     }
     // Load UnitTypeConfig → UNIT_TYPES
     const utRows=(rUT.values||[]).slice(1).filter(r=>r[0]!=='');
@@ -1180,6 +1192,27 @@ function edResetForProject(){
   }
 }
 
+function edBuildKLTable(){
+  // Build KL input table based on current MS_CODES
+  const container=document.getElementById('ep-kl-rows');
+  if(!container)return;
+  container.innerHTML='';
+  MS_CODES.forEach((code,i)=>{
+    const name=MS[i]||code;
+    const row=document.createElement('div');
+    row.className='ep-kl-row';
+    row.setAttribute('data-code',code);
+    row.style.cssText='display:grid;grid-template-columns:1fr 60px 60px 60px;gap:0;border-bottom:1px solid #0f172a;align-items:center';
+    row.innerHTML=`
+      <div style="padding:4px 6px;font-size:9px;color:#94a3b8">${name}</div>
+      <input class="ep-kl-bt" type="number" placeholder="0" step="0.01" style="border:none;border-left:1px solid #1e293b;background:#0a0f1a;color:#60a5fa;font-size:9px;padding:4px;width:100%;outline:none;text-align:center">
+      <input class="ep-kl-ct" type="number" placeholder="0" step="0.001" style="border:none;border-left:1px solid #1e293b;background:#0a0f1a;color:#34d399;font-size:9px;padding:4px;width:100%;outline:none;text-align:center">
+      <input class="ep-kl-cf" type="number" placeholder="0" step="0.1" style="border:none;border-left:1px solid #1e293b;background:#0a0f1a;color:#fbbf24;font-size:9px;padding:4px;width:100%;outline:none;text-align:center">
+    `;
+    container.appendChild(row);
+  });
+}
+
 function edLoadExistingCoords(){
   // Load polygon hiện có từ dự án đang mở
   if(!CUR||!Object.keys(COORDS).length)return;
@@ -1188,11 +1221,14 @@ function edLoadExistingCoords(){
     const vi=VI[id]||{};
     edUnits[id]={
       pts:pts.split(' ').map(p=>{const[x,y]=p.split(',').map(Number);return{x,y};}),
-      type:vi.type||'Biệt thự vườn',area:vi.area||'',color:ED_COLS[edColorIdx%ED_COLS.length]
+      type:vi.type||'Biệt thự vườn',area:vi.area||'',color:ED_COLS[edColorIdx%ED_COLS.length],
+      klData:[]
     };
     edColorIdx++;edRenderUnit(id);
   });
   edRenderList();edUpdateExp();
+  // Build KL table
+  edBuildKLTable();
   if(Object.keys(edUnits).length)toast(`Đã load ${Object.keys(edUnits).length} căn từ ${CUR.name}`);
 }
 
@@ -1230,8 +1266,17 @@ function edSaveUnit(){
   const id=document.getElementById('ep-id').value.trim().toUpperCase();
   if(!id){toast('Nhập mã căn!','err');return;}if(edPts.length<3){toast('Cần ≥3 điểm!','err');return;}
   const type=document.getElementById('ep-type').value;const area=document.getElementById('ep-area').value;const imgurl=document.getElementById('ep-imgurl').value;
+  // Collect KL data from table
+  const klData=[];
+  document.querySelectorAll('.ep-kl-row').forEach(row=>{
+    const code=row.getAttribute('data-code');
+    const bt=parseFloat(row.querySelector('.ep-kl-bt').value)||0;
+    const ct=parseFloat(row.querySelector('.ep-kl-ct').value)||0;
+    const cf=parseFloat(row.querySelector('.ep-kl-cf').value)||0;
+    klData.push({code,bt,ct,cf});
+  });
   const color=ED_COLS[edColorIdx%ED_COLS.length];edColorIdx++;
-  edUnits[id]={pts:[...edPts],type,area,imgurl,color};
+  edUnits[id]={pts:[...edPts],type,area,imgurl,color,klData};
   edRenderUnit(id);edRenderList();edUpdateExp();
   edPts=[];edDrawing=false;edPrevPt=null;edPP.removeAttribute('points');edDots.forEach(d=>d.remove());edDots=[];
   document.getElementById('ep-id').value='';document.getElementById('ep-area').value='';document.getElementById('ep-imgurl').value='';
@@ -1287,11 +1332,33 @@ async function edWriteToSheet(){
     // Ghi data mới
     const values=ids.map(id=>{const u=edUnits[id];const pts=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');return[id,pts];});
     await gapiWrite(CUR.sheetId,'MapConfig!A2:B',values);
-    // Ghi VillaInfo nếu có thông tin mới
-    const viValues=ids.filter(id=>edUnits[id].area||edUnits[id].type).map(id=>{const u=edUnits[id];return[id,u.type||'',u.type==='Biệt thự vườn'?'Garden Mansion':u.type==='Dinh thự đồi'?'Hillside Mansion':'Corner Hillside',u.area||'',u.imgurl||''];});
+    // Ghi VillaInfo
+    const viValues=ids.filter(id=>edUnits[id].area||edUnits[id].type).map(id=>{const u=edUnits[id];
+      const typeCode=u.type;
+      const ut=UNIT_TYPES.find(t=>t.name===typeCode||t.code===typeCode);
+      const sub=ut?ut.nameEN:'';
+      return[id,typeCode,sub,u.area||'',u.imgurl||''];
+    });
     if(viValues.length){
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/VillaInfo!A2:E1000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
       await gapiWrite(CUR.sheetId,'VillaInfo!A2:E',viValues);
+    }
+    // Ghi KLDinhMuc — từng căn × từng mốc
+    const klRows=[];
+    ids.forEach(id=>{
+      const u=edUnits[id];
+      if(u.klData&&u.klData.length){
+        u.klData.forEach(kl=>{
+          if(kl.bt||kl.ct||kl.cf) klRows.push([id,kl.code,kl.bt,kl.ct,kl.cf]);
+        });
+      }
+    });
+    if(klRows.length){
+      // Xóa data cũ của các căn này trong KLDinhMuc
+      const existKL=await gapi(CUR.sheetId,'KLDinhMuc!A:A');
+      const klVals=existKL.values||[];
+      // Ghi append rows mới
+      await gapiWrite(CUR.sheetId,'KLDinhMuc!A:E',klRows);
     }
     toast(`✓ Đã ghi ${ids.length} căn lên Sheet ${CUR.name}!`);
     // Refresh data
@@ -1381,11 +1448,13 @@ async function submitProgress(){
     await gapiWrite(CUR.sheetId,'MasterStatus!A:C',[[sel,milestone,dateStr]]);
     toast(`✓ Đã cập nhật ${sel} → ${milestone}`);
     cancelProgress();
-    // Update local state ngay
+    // Update local state ngay + fetch lại KL từ Sheet
     SD[sel]={ms:milestone,date:dateStr};
     renderAll();
-    renderPanel(sel);
+    showSinglePanel(sel);
     updateProjSummary();
+    // Fetch lại KLTongHop để cập nhật KL mới
+    setTimeout(()=>loadProjectData(),1500);
   }catch(e){
     toast('Lỗi ghi Sheet: '+e.message,'err');
   }finally{
