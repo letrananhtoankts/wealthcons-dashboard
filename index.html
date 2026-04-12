@@ -600,7 +600,7 @@ option{background:#0f172a}
 const REGISTRY_ID = '1vhwwEt5CD7n_lqRBInCag-75o_MwgpHXqsB-xb2xfOY';
 const API_KEY     = 'AIzaSyA0RIegBVbU_FBU5_kCT9IGNswN0f_1b68';
 const CLIENT_ID   = '775858800222-53qik12lr7slpb8ghctg617nqti9t4l4.apps.googleusercontent.com';
-const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets';
+const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
 const AUTO_REFRESH_MIN = 5;
 // MS/MC loaded dynamically from MilestoneConfig Sheet
 let MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
@@ -741,7 +741,15 @@ window.addEventListener('load',()=>{
       const s = JSON.parse(saved);
       authUser = {email:s.email,name:s.name,picture:s.picture,given_name:s.given_name};
       userRole = s.role||'viewer';
-      updateAuthUI();
+      // Verify lại role từ Whitelist Sheet (phòng trường hợp role thay đổi)
+      checkWhitelist(s.email).then(()=>{
+        // Cập nhật lại localStorage với role mới nhất
+        localStorage.setItem('wc_session',JSON.stringify({
+          email:s.email,name:s.name,picture:s.picture,
+          given_name:s.given_name,role:userRole
+        }));
+        updateAuthUI();
+      });
     }catch(e){ localStorage.removeItem('wc_session'); }
   }
   setTimeout(initAuth,1000);
