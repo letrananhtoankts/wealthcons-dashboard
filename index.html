@@ -799,7 +799,20 @@ async function loadRegistry(){
     add.className='proj-card-add'+(authUser?'':' locked');
     add.innerHTML='<span style="font-size:20px">＋</span> Thêm dự án mới';
     add.title=authUser?'':'Đăng nhập để thêm dự án';
-    add.addEventListener('click',()=>{if(!authUser){toast('Cần đăng nhập để thêm dự án','err');return;}openProject(PROJECTS[0]||null);setTimeout(()=>switchTab('admin'),100);});
+    add.addEventListener('click',()=>{
+      if(!authUser){toast('Cần đăng nhập để thêm dự án','err');return;}
+      if(!isAdmin()){toast('Cần quyền admin','err');return;}
+      // Mở Admin tab trực tiếp không cần dự án
+      showScreen('scr-dashboard');
+      document.getElementById('h-proj-id').textContent='';
+      document.getElementById('h-proj-name').textContent='Quản lý dự án';
+      // Ẩn các tab không cần thiết, chỉ hiện Admin
+      document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+      document.querySelectorAll('.h-tab').forEach(e=>e.classList.remove('active'));
+      document.getElementById('tab-admin').classList.add('active');
+      document.getElementById('htab-admin').classList.add('active');
+      adminLoadProjects();
+    });
     grid.appendChild(add);
   }catch(e){
     grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:32px;color:#ef4444;font-size:11px">Lỗi tải Registry: ${e.message}</div>`;
