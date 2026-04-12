@@ -665,6 +665,11 @@ function initAuth(){
         .then(r=>r.json()).then(async u=>{
           authUser=u;
           await checkWhitelist(u.email);
+          // Lưu session vào localStorage
+          localStorage.setItem('wc_session',JSON.stringify({
+            email:u.email,name:u.name,picture:u.picture,
+            given_name:u.given_name,role:userRole
+          }));
           updateAuthUI();
           toast('Đã đăng nhập: '+u.name+' ('+userRole+')');
         });
@@ -678,7 +683,9 @@ function signIn(){
 }
 function signOut(){
   if(authToken)google.accounts.oauth2.revoke(authToken);
-  authToken=null;authUser=null;userRole='viewer';updateAuthUI();toast('Đã đăng xuất');
+  authToken=null;authUser=null;userRole='viewer';
+  localStorage.removeItem('wc_session');
+  updateAuthUI();toast('Đã đăng xuất');
 }
 
 async function checkWhitelist(email){
@@ -727,6 +734,16 @@ function updateAuthUI(){
 }
 
 window.addEventListener('load',()=>{
+  // Khôi phục session từ localStorage nếu có
+  const saved = localStorage.getItem('wc_session');
+  if(saved){
+    try{
+      const s = JSON.parse(saved);
+      authUser = {email:s.email,name:s.name,picture:s.picture,given_name:s.given_name};
+      userRole = s.role||'viewer';
+      updateAuthUI();
+    }catch(e){ localStorage.removeItem('wc_session'); }
+  }
   setTimeout(initAuth,1000);
 });
 
@@ -1066,13 +1083,23 @@ async function adminAddProject(){
   const imgH=document.getElementById('a-imgh').value.trim()||'1760';
   if(!pid||!name||!sheetId){toast('Vui lòng điền đủ: Project ID, Tên, Sheet ID','err');return;}
   if(!authToken){toast('Cần đăng nhập để ghi vào Sheet','err');return;}
+  const btn=event.target;
   try{
-    const btn=event.target;btn.disabled=true;btn.textContent='Đang ghi...';
-    await gapiWrite(REGISTRY_ID,'Registry!A:H',[[pid,name,sheetId,color,imgUrl,'',imgW,imgH]]);
+    btn.disabled=true;btn.textContent='Đang ghi...';
+    // Đọc Registry để tìm dòng trống tiếp theo (tránh lệch cột do append)
+    const existing=await gapi(REGISTRY_ID,'Registry!A:A');
+    const rows=existing.values||[];
+    const nextRow=rows.length+1; // Dòng tiếp theo sau dữ liệu hiện có
+    // Ghi đúng vị trí dòng cụ thể
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${REGISTRY_ID}/values/Registry!A${nextRow}:H${nextRow}?valueInputOption=RAW`,{
+      method:'PUT',
+      headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+      body:JSON.stringify({values:[[pid,name,sheetId,color,imgUrl,API_KEY,imgW,imgH]]})
+    }).then(r=>r.json());
     toast(`✓ Đã thêm dự án ${name}`);
     adminClearForm();adminLoadProjects();loadRegistry();
   }catch(e){toast('Lỗi ghi Sheet: '+e.message,'err');}
-  finally{const btn=document.querySelector('.abtn-primary');if(btn){btn.disabled=false;btn.textContent='➕ Thêm vào Registry';}}
+  finally{btn.disabled=false;btn.textContent='➕ Thêm vào Registry';}
 }
 
 async function adminDelProject(rowNum){
