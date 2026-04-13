@@ -1388,7 +1388,7 @@ async function edWriteToSheet(){
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/VillaInfo!A2:E1000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
       await gapiWrite(CUR.sheetId,'VillaInfo!A2:E',viValues);
     }
-    // Ghi KLDinhMuc — từng căn × từng mốc
+    // Ghi KLDinhMuc — xóa data cũ của các căn này trước, rồi ghi mới
     const klRows=[];
     ids.forEach(id=>{
       const u=edUnits[id];
@@ -1398,13 +1398,32 @@ async function edWriteToSheet(){
         });
       }
     });
-    if(klRows.length){
-      // Xóa data cũ của các căn này trong KLDinhMuc
-      const existKL=await gapi(CUR.sheetId,'KLDinhMuc!A:A');
+    // Luôn xử lý KLDinhMuc: xóa dòng cũ của các căn đang ghi, rồi ghi mới
+    try{
+      // Đọc toàn bộ KLDinhMuc
+      const existKL=await gapi(CUR.sheetId,'KLDinhMuc!A:E');
       const klVals=existKL.values||[];
-      // Ghi append rows mới
-      await gapiWrite(CUR.sheetId,'KLDinhMuc!A:E',klRows);
-    }
+      const idSet=new Set(ids);
+      // Giữ lại header (dòng 1) và các dòng không thuộc căn đang ghi
+      const kept=klVals.filter((row,i)=>{
+        if(i===0) return true; // giữ header
+        return !idSet.has(row[0]); // giữ căn khác
+      });
+      // Ghi lại toàn bộ KLDinhMuc = kept + klRows mới
+      const newKL=[...kept,...klRows];
+      // Xóa toàn bộ KLDinhMuc trước
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/KLDinhMuc!A1:E10000:clear`,{
+        method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}
+      });
+      // Ghi lại từ A1
+      if(newKL.length){
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/KLDinhMuc!A1:E${newKL.length}?valueInputOption=RAW`,{
+          method:'PUT',
+          headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+          body:JSON.stringify({values:newKL})
+        }).then(r=>r.json());
+      }
+    }catch(e){toast('Lỗi ghi KLDinhMuc: '+e.message,'err');}
     toast(`✓ Đã ghi ${ids.length} căn lên Sheet ${CUR.name}!`);
     // Refresh data
     await loadProjectData();
