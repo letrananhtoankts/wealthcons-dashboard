@@ -510,10 +510,7 @@ option{background:#0f172a}
           <div class="efl" style="margin-bottom:3px">Export → paste vào MapConfig Sheet</div>
           <textarea class="ep-exparea" id="ep-exparea" readonly placeholder="Code xuất ở đây..."></textarea>
           <div class="ep-exprow">
-            <button class="epbtn epbtn-s" style="flex:2" onclick="edCopy()">📋 Copy</button>
-            <button class="epbtn epbtn-c" onclick="edWriteToSheet()" id="ep-write" style="flex:2;font-size:8px">☁ Ghi Sheet</button>
-            <button class="epbtn epbtn-c" onclick="edSaveSession()" style="font-size:8px">💾</button>
-            <button class="epbtn epbtn-c" onclick="edLoadSession()" style="font-size:8px">📂</button>
+            <button class="epbtn epbtn-s" onclick="edWriteToSheet()" id="ep-write" style="width:100%;font-size:13px;padding:10px;font-weight:700;letter-spacing:.03em">☁ Ghi Sheet</button>
           </div>
         </div>
       </div>
@@ -848,7 +845,7 @@ async function loadProjectData(){
   try{
     const[rS,rK,rM,rV,rMS,rUT]=await Promise.all([
       gapi(CUR.sheetId,'MasterStatus!A:C'),
-      gapi(CUR.sheetId,'KLTongHop!A:K'),
+      gapi(CUR.sheetId,'KLTongHop!A:L'),
       gapi(CUR.sheetId,'MapConfig!A:B'),
       gapi(CUR.sheetId,'VillaInfo!A:E'),
       gapi(CUR.sheetId,'MilestoneConfig!A:E'),
@@ -876,9 +873,9 @@ async function loadProjectData(){
     sRows.sort((a,b)=>(b[2]||'').localeCompare(a[2]||''));
     sRows.forEach(([c,m,d])=>{if(c&&!SD[c])SD[c]={ms:m||null,date:d||null};});
     KL={};
-    (rK.values||[]).slice(2).forEach(row=>{
+    (rK.values||[]).slice(2).forEach(row=>{ // Row 1=title, Row 2=header, Row 3+=data
       const c=row[0];if(!c||c==='VillaCode')return;
-      KL[c]={cd:parseFloat(row[2])||0,cp:parseFloat(row[3])||0,rd:parseFloat(row[5])||0,rp:parseFloat(row[6])||0,fd:parseFloat(row[8])||0,fp:parseFloat(row[9])||0};
+      KL[c]={cd:parseFloat(row[3])||0,cp:parseFloat(row[4])||0,rd:parseFloat(row[6])||0,rp:parseFloat(row[7])||0,fd:parseFloat(row[9])||0,fp:parseFloat(row[10])||0};
     });
     COORDS={};
     (rM.values||[]).slice(1).filter(r=>r[0]).forEach(([id,coords])=>{if(id&&coords)COORDS[id]=coords;});
