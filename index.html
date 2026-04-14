@@ -1192,19 +1192,34 @@ function edNoImg(){
 }
 
 function edResetForProject(){
-  // Reset editor hoàn toàn cho dự án mới
-  edUnits={};edPolyL.innerHTML='';edImgL.innerHTML='';edColorIdx=0;edSelId=null;
-  // Reset bg
-  const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
+  // Reset editor cho dự án
+  edUnits={};edPolyL.innerHTML='';edColorIdx=0;edSelId=null;
   edCancel();edRenderList();edUpdateExp();
-  // Nếu dự án có imageUrl → load ảnh tự động, không cần upload
+  // Nếu dự án có imageUrl → load ảnh tự động
   if(CUR&&CUR.imageUrl){
     const ovl=document.getElementById('ed-ovl');
+    // Clear edImgL và reset bg
+    edImgL.innerHTML='';
+    const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
     ovl.innerHTML='<div style="text-align:center;color:#94a3b8"><div class="spin" style="margin:0 auto 10px"></div><div style="font-size:12px">Đang tải ảnh mặt bằng...</div></div>';
     ovl.style.display='flex';
+    const w=CUR.imgW||2000, h=CUR.imgH||1760;
+    edInitSVG(w,h);
+    // Dùng SVG image element trực tiếp như tab Bản đồ
+    const si=edNs('image');
+    si.setAttribute('href',CUR.imageUrl);
+    si.setAttribute('x',0);si.setAttribute('y',0);
+    si.setAttribute('width',w);si.setAttribute('height',h);
+    si.setAttribute('pointer-events','none');
+    edImgL.appendChild(si);
+    // Hiện ảnh ngay, không đợi onload
+    ovl.style.display='none';
+    edFitZoom();
+    edLoadExistingCoords();
+    return;
+    // fallback nếu cần (không dùng onload nữa)
     const img=new Image();
     img.onload=function(){
-      // Dùng kích thước từ Registry để đảm bảo khớp với tab Bản đồ
       const w=CUR.imgW||img.naturalWidth, h=CUR.imgH||img.naturalHeight;
       edInitSVG(w,h);
       const si=edNs('image');si.setAttribute('href',CUR.imageUrl);si.setAttribute('x',0);si.setAttribute('y',0);
