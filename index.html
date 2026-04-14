@@ -1257,8 +1257,16 @@ function edBuildKLTable(){
 }
 
 function edLoadExistingCoords(){
-  // Load polygon hiện có từ dự án đang mở
-  if(!CUR||!Object.keys(COORDS).length)return;
+  if(!CUR)return;
+  // Nếu COORDS chưa có → fetch lại project data trước
+  if(!Object.keys(COORDS).length){
+    loadProjectData().then(()=>edDoLoadCoords());
+    return;
+  }
+  edDoLoadCoords();
+}
+
+function edDoLoadCoords(){
   edUnits={};edPolyL.innerHTML='';edColorIdx=0;
   Object.entries(COORDS).forEach(([id,pts])=>{
     const vi=VI[id]||{};
@@ -1270,7 +1278,6 @@ function edLoadExistingCoords(){
     edColorIdx++;edRenderUnit(id);
   });
   edRenderList();edUpdateExp();
-  // Build KL table
   edBuildKLTable();
   if(Object.keys(edUnits).length)toast(`Đã load ${Object.keys(edUnits).length} căn từ ${CUR.name}`);
 }
