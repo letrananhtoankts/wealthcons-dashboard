@@ -1171,7 +1171,7 @@ function edLoadImg(url){
     const si=edNs('image');si.setAttribute('href',url);si.setAttribute('x',0);si.setAttribute('y',0);si.setAttribute('width',i.naturalWidth);si.setAttribute('height',i.naturalHeight);si.setAttribute('pointer-events','none');
     edImgL.appendChild(si);document.getElementById('ed-ovl').style.display='none';edFitZoom();
     // Load existing coords from current project
-    edLoadExistingCoords();
+    edDoLoadCoords();
   };i.src=url;
 }
 
@@ -1180,7 +1180,7 @@ function edNoImg(){
   const g=edNs('g');for(let x=0;x<=edW;x+=100){const l=edNs('line');l.setAttribute('x1',x);l.setAttribute('y1',0);l.setAttribute('x2',x);l.setAttribute('y2',edH);l.setAttribute('stroke','#1e3a5f');l.setAttribute('stroke-width','0.5');g.appendChild(l);}
   for(let y=0;y<=edH;y+=100){const l=edNs('line');l.setAttribute('x1',0);l.setAttribute('y1',y);l.setAttribute('x2',edW);l.setAttribute('y2',y);l.setAttribute('stroke','#1e3a5f');l.setAttribute('stroke-width','0.5');g.appendChild(l);}
   edImgL.appendChild(g);document.getElementById('ed-ovl').style.display='none';edFitZoom();
-  edLoadExistingCoords();
+  edDoLoadCoords();
 }
 
 function edResetForProject(){
@@ -1217,7 +1217,7 @@ function edResetForProject(){
       ovl.style.display='flex';
       // Vẫn load polygon dù không có ảnh
       edInitSVG(CUR.imgW||2000,CUR.imgH||1760);
-      edLoadExistingCoords();
+      edDoLoadCoords(); // Gọi trực tiếp, không qua edLoadExistingCoords để tránh loop
     };
     img.src=CUR.imageUrl;
   } else {
@@ -1231,7 +1231,7 @@ function edResetForProject(){
     </div>
     <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
     ovl.style.display='flex';
-    edLoadExistingCoords();
+    edDoLoadCoords();
   }
 }
 
@@ -1258,11 +1258,11 @@ function edBuildKLTable(){
 
 function edLoadExistingCoords(){
   if(!CUR)return;
-  // Nếu COORDS chưa có → fetch lại project data trước rồi reset editor
+  // Nếu COORDS chưa có → fetch lại project data trước
   if(!Object.keys(COORDS).length){
     loadProjectData().then(()=>{
-      // Sau khi có data → reset lại editor để load ảnh + căn đúng thứ tự
-      edResetForProject();
+      // Sau khi có data → load căn trực tiếp, không reset lại (tránh vòng lặp)
+      edDoLoadCoords();
     });
     return;
   }
