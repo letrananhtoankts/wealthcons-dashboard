@@ -1258,9 +1258,12 @@ function edBuildKLTable(){
 
 function edLoadExistingCoords(){
   if(!CUR)return;
-  // Nếu COORDS chưa có → fetch lại project data trước
+  // Nếu COORDS chưa có → fetch lại project data trước rồi reset editor
   if(!Object.keys(COORDS).length){
-    loadProjectData().then(()=>edDoLoadCoords());
+    loadProjectData().then(()=>{
+      // Sau khi có data → reset lại editor để load ảnh + căn đúng thứ tự
+      edResetForProject();
+    });
     return;
   }
   edDoLoadCoords();
