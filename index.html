@@ -1192,34 +1192,19 @@ function edNoImg(){
 }
 
 function edResetForProject(){
-  // Reset editor cho dự án
-  edUnits={};edPolyL.innerHTML='';edColorIdx=0;edSelId=null;
+  // Reset editor hoàn toàn cho dự án mới
+  edUnits={};edPolyL.innerHTML='';edImgL.innerHTML='';edColorIdx=0;edSelId=null;
+  // Reset bg
+  const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
   edCancel();edRenderList();edUpdateExp();
-  // Nếu dự án có imageUrl → load ảnh tự động
+  // Nếu dự án có imageUrl → load ảnh tự động, không cần upload
   if(CUR&&CUR.imageUrl){
     const ovl=document.getElementById('ed-ovl');
-    // Clear edImgL và reset bg
-    edImgL.innerHTML='';
-    const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
     ovl.innerHTML='<div style="text-align:center;color:#94a3b8"><div class="spin" style="margin:0 auto 10px"></div><div style="font-size:12px">Đang tải ảnh mặt bằng...</div></div>';
     ovl.style.display='flex';
-    const w=CUR.imgW||2000, h=CUR.imgH||1760;
-    edInitSVG(w,h);
-    // Dùng SVG image element trực tiếp như tab Bản đồ
-    const si=edNs('image');
-    si.setAttribute('href',CUR.imageUrl);
-    si.setAttribute('x',0);si.setAttribute('y',0);
-    si.setAttribute('width',w);si.setAttribute('height',h);
-    si.setAttribute('pointer-events','none');
-    edImgL.appendChild(si);
-    // Hiện ảnh ngay, không đợi onload
-    ovl.style.display='none';
-    edFitZoom();
-    edLoadExistingCoords();
-    return;
-    // fallback nếu cần (không dùng onload nữa)
     const img=new Image();
     img.onload=function(){
+      // Dùng kích thước từ Registry để đảm bảo khớp với tab Bản đồ
       const w=CUR.imgW||img.naturalWidth, h=CUR.imgH||img.naturalHeight;
       edInitSVG(w,h);
       const si=edNs('image');si.setAttribute('href',CUR.imageUrl);si.setAttribute('x',0);si.setAttribute('y',0);
@@ -1381,38 +1366,6 @@ function edDelUnit(id,e){e.stopPropagation();if(!confirm(`Xóa căn ${id}?`))ret
 function edEditUnit(id,e){
   e.stopPropagation();
   const u=edUnits[id];if(!u)return;
-  document.getElementById('ep-id').value=id;
-  const typeEl=document.getElementById('ep-type');
-  if(typeEl){
-    const opts=Array.from(typeEl.options);
-    const match=opts.find(o=>o.value===u.type||o.text===u.type);
-    if(match) typeEl.value=match.value;
-  }
-  document.getElementById('ep-area').value=u.area||'';
-  document.getElementById('ep-imgurl').value=u.imgurl||'';
-  edBuildKLTable();
-  if(u.klData&&u.klData.length){
-    u.klData.forEach(kl=>{
-      const row=document.querySelector(`.ep-kl-row[data-code="${kl.code}"]`);
-      if(row){
-        row.querySelector('.ep-kl-bt').value=kl.bt||'';
-        row.querySelector('.ep-kl-ct').value=kl.ct||'';
-        row.querySelector('.ep-kl-cf').value=kl.cf||'';
-      }
-    });
-  }
-  edPts=[...u.pts];edDrawing=false;
-  edSelId=id;
-  document.getElementById('ep-ptsc').textContent=edPts.length;
-  document.getElementById('ep-ptsh').textContent=`Đang chỉnh sửa ${id} — Vẽ lại polygon nếu cần`;
-  document.getElementById('ep-save').disabled=false;
-  edRenderList();
-  toast(`✏️ Đang chỉnh sửa căn ${id}`);
-}
-
-function edEditUnit(id,e){
-  e.stopPropagation();
-  const u=edUnits[id];if(!u)return;
   // Load thông tin căn lên form
   document.getElementById('ep-id').value=id;
   const typeEl=document.getElementById('ep-type');
@@ -1539,19 +1492,6 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();edUndo();}
 });
 document.addEventListener('keyup',e=>{const edActive=document.getElementById('tab-editor').classList.contains('active');if(e.key===' '&&edActive&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))edSetMode('draw');});
-
-// ════════════════════════════════════════
-// PROGRESS FORM
-// ════════════════════════════════════════
-function openProgressForm(){
-  if(!sel||!CUR)return;
-  // Google Form pre-fill URL
-  // Bạn cần update FORM_URL với Form ID thực tế
-  const FORM_URL='https://docs.google.com/forms/d/15NRhIOQAKG3ztid6TEr65rGtv9J-W4Nmux3C3ONWQnM/viewform';
-  // Pre-fill entry IDs - cần lấy từ Form (inspect element)
-  // Tạm thời mở Form không pre-fill, user tự chọn
-  window.open(FORM_URL,'_blank');
-}
 
 // ════════════════════════════════════════
 // PROGRESS FORM
