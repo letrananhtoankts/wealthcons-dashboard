@@ -211,10 +211,10 @@ header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;displ
 .ed-zc{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:3px;z-index:10}
 .ed-panel{width:280px;flex-shrink:0;background:#111827;border-left:1px solid #1e293b;display:flex;flex-direction:column;overflow:hidden}
 .ep-sec{padding:8px 11px;border-bottom:1px solid #1e293b;flex-shrink:0}
-.ep-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
-.ep-badge{background:rgba(59,130,246,.2);color:#60a5fa;font-size:11px;padding:1px 5px;border-radius:6px;font-weight:700}
-.efl{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
-.efi{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:4px;padding:6px 8px;font-size:13px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;outline:none;transition:border .15s;margin-bottom:5px}
+.ep-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.ep-badge{background:rgba(59,130,246,.2);color:#60a5fa;font-size:8px;padding:1px 5px;border-radius:6px;font-weight:700}
+.efl{font-size:8px;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.efi{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:4px;padding:5px 7px;font-size:10px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;outline:none;transition:border .15s;margin-bottom:5px}
 .efi:focus{border-color:#3b82f6}
 select.efi{cursor:pointer}
 option{background:#0f172a}
@@ -222,7 +222,7 @@ option{background:#0f172a}
 .eptsn{font-size:14px;font-weight:700;color:#3b82f6;font-family:'JetBrains Mono',monospace}
 .eptsh{font-size:8px;color:#64748b;line-height:1.4}
 .ep-btns{display:flex;gap:4px}
-.epbtn{flex:1;font-family:inherit;font-size:12px;padding:7px 8px;border-radius:4px;cursor:pointer;border:none;font-weight:600;transition:all .15s}
+.epbtn{flex:1;font-family:inherit;font-size:9px;padding:5px 6px;border-radius:4px;cursor:pointer;border:none;font-weight:600;transition:all .15s}
 .epbtn-s{background:#10b981;color:#fff}
 .epbtn-s:hover{background:#059669}
 .epbtn-s:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
@@ -235,15 +235,15 @@ option{background:#0f172a}
 .ep-item:hover{border-color:#334155}
 .ep-item.ep-sel{border-color:#f59e0b}
 .ep-ico{width:6px;height:6px;border-radius:2px;flex-shrink:0}
-.ep-id{font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;flex:1;color:#e2e8f0}
-.ep-type{font-size:11px;color:#64748b}
-.ep-pts{font-size:11px;color:#334155;font-family:'JetBrains Mono',monospace;margin-left:auto;flex-shrink:0}
-.ep-del{font-size:12px;color:#475569;opacity:0;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;flex-shrink:0}
+.ep-id{font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;flex:1;color:#e2e8f0}
+.ep-type{font-size:8px;color:#64748b}
+.ep-pts{font-size:8px;color:#334155;font-family:'JetBrains Mono',monospace;margin-left:auto;flex-shrink:0}
+.ep-del{font-size:9px;color:#475569;opacity:0;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;flex-shrink:0}
 .ep-del:hover{color:#ef4444}
 .ep-item:hover .ep-del{opacity:1}
 .ep-empty{text-align:center;padding:20px 10px;color:#334155;font-size:10px}
 .ep-export{padding:8px 11px;border-top:1px solid #1e293b;flex-shrink:0}
-.ep-exparea{width:100%;background:#0a0f1a;border:1px solid #1e293b;border-radius:4px;padding:5px 7px;font-size:11px;color:#60a5fa;font-family:'JetBrains Mono',monospace;height:70px;resize:none;outline:none}
+.ep-exparea{width:100%;background:#0a0f1a;border:1px solid #1e293b;border-radius:4px;padding:5px 7px;font-size:8px;color:#60a5fa;font-family:'JetBrains Mono',monospace;height:70px;resize:none;outline:none}
 .ep-exprow{display:flex;gap:3px;margin-top:4px}
 .ed-upload-ovl{position:absolute;inset:0;background:rgba(10,15,26,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:30}
 .ed-dropbox{border:2px dashed #1e293b;border-radius:10px;padding:24px 36px;text-align:center;cursor:pointer;transition:all .2s;max-width:340px}
@@ -507,8 +507,10 @@ option{background:#0f172a}
         </div>
         <div class="ep-list" id="ep-list"><div class="ep-empty">🏗️<br>Chưa có căn nào</div></div>
         <div class="ep-export">
+          <div class="efl" style="margin-bottom:3px">Export → paste vào MapConfig Sheet</div>
+          <textarea class="ep-exparea" id="ep-exparea" readonly placeholder="Code xuất ở đây..."></textarea>
           <div class="ep-exprow">
-            <button class="epbtn epbtn-s" onclick="edWriteToSheet()" id="ep-write" style="width:100%;font-size:15px;padding:12px;font-weight:700;letter-spacing:.03em">☁ Ghi Sheet</button>
+            <button class="epbtn epbtn-s" onclick="edWriteToSheet()" id="ep-write" style="width:100%;font-size:13px;padding:10px;font-weight:700;letter-spacing:.03em">☁ Ghi Sheet</button>
           </div>
         </div>
       </div>
@@ -764,15 +766,7 @@ function switchTab(t){
   document.getElementById('tab-'+t).classList.add('active');
   document.getElementById('htab-'+t).classList.add('active');
   // Khi vào editor: reset hoàn toàn và hiện upload overlay
-  if(t==='editor'){
-    // Nếu chưa có COORDS → fetch data trước rồi mới reset editor
-    if(CUR&&!Object.keys(COORDS).length){
-      loadProjectData().then(()=>edResetForProject());
-    } else {
-      edResetForProject();
-    }
-    setTimeout(edBuildKLTable,800);
-  }
+  if(t==='editor'){edResetForProject();setTimeout(edBuildKLTable,500);}
 }
 
 // ════════════════════════════════════════
@@ -1188,7 +1182,7 @@ function edNoImg(){
   const g=edNs('g');for(let x=0;x<=edW;x+=100){const l=edNs('line');l.setAttribute('x1',x);l.setAttribute('y1',0);l.setAttribute('x2',x);l.setAttribute('y2',edH);l.setAttribute('stroke','#1e3a5f');l.setAttribute('stroke-width','0.5');g.appendChild(l);}
   for(let y=0;y<=edH;y+=100){const l=edNs('line');l.setAttribute('x1',0);l.setAttribute('y1',y);l.setAttribute('x2',edW);l.setAttribute('y2',y);l.setAttribute('stroke','#1e3a5f');l.setAttribute('stroke-width','0.5');g.appendChild(l);}
   edImgL.appendChild(g);document.getElementById('ed-ovl').style.display='none';edFitZoom();
-  edDoLoadCoords();
+  edLoadExistingCoords();
 }
 
 function edResetForProject(){
@@ -1197,23 +1191,37 @@ function edResetForProject(){
   // Reset bg
   const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
   edCancel();edRenderList();edUpdateExp();
-  // Nếu dự án có imageUrl → dùng SVG image element trực tiếp (không dùng new Image() vì GitHub raw không fire onload cross-origin)
+  // Nếu dự án có imageUrl → load ảnh tự động, không cần upload
   if(CUR&&CUR.imageUrl){
     const ovl=document.getElementById('ed-ovl');
-    const w=CUR.imgW||2000, h=CUR.imgH||1760;
-    edInitSVG(w,h);
-    // Append SVG image trực tiếp vào layer — giống cách tab Bản đồ hoạt động
-    const si=edNs('image');
-    si.setAttribute('href',CUR.imageUrl);
-    si.setAttribute('x',0);si.setAttribute('y',0);
-    si.setAttribute('width',w);si.setAttribute('height',h);
-    si.setAttribute('preserveAspectRatio','xMidYMid meet');
-    si.setAttribute('pointer-events','none');
-    edImgL.appendChild(si);
-    ovl.style.display='none';
-    edFitZoom();
-    // Dùng setTimeout nhỏ để đảm bảo SVG đã mount vào DOM trước khi vẽ polygon
-    setTimeout(()=>{ edLoadExistingCoords(); }, 80);
+    ovl.innerHTML='<div style="text-align:center;color:#94a3b8"><div class="spin" style="margin:0 auto 10px"></div><div style="font-size:12px">Đang tải ảnh mặt bằng...</div></div>';
+    ovl.style.display='flex';
+    const img=new Image();
+    img.onload=function(){
+      // Dùng kích thước từ Registry để đảm bảo khớp với tab Bản đồ
+      const w=CUR.imgW||img.naturalWidth, h=CUR.imgH||img.naturalHeight;
+      edInitSVG(w,h);
+      const si=edNs('image');si.setAttribute('href',CUR.imageUrl);si.setAttribute('x',0);si.setAttribute('y',0);
+      si.setAttribute('width',w);si.setAttribute('height',h);si.setAttribute('pointer-events','none');
+      edImgL.appendChild(si);
+      ovl.style.display='none';edFitZoom();
+      edLoadExistingCoords();
+    };
+    img.onerror=function(){
+      // Ảnh không load được → hiện overlay upload thủ công
+      ovl.innerHTML=`<div class="ed-dropbox" id="ed-dropbox" onclick="document.getElementById('ed-fileinp').click()">
+        <div style="font-size:34px;margin-bottom:6px">🗺️</div>
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:3px">Upload ảnh mặt bằng</div>
+        <div style="font-size:10px;color:#475569;margin-bottom:10px">Ảnh tự động không load được — upload thủ công</div>
+        <button style="font-family:inherit;font-size:10px;padding:6px 18px;border-radius:6px;cursor:pointer;border:none;background:var(--gold);color:#0a0f1a;font-weight:600" onclick="event.stopPropagation();document.getElementById('ed-fileinp').click()">Chọn ảnh</button>
+      </div>
+      <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
+      ovl.style.display='flex';
+      // Vẫn load polygon dù không có ảnh
+      edInitSVG(CUR.imgW||2000,CUR.imgH||1760);
+      edLoadExistingCoords();
+    };
+    img.src=CUR.imageUrl;
   } else {
     // Không có imageUrl → hiện overlay upload
     const ovl=document.getElementById('ed-ovl');
@@ -1225,7 +1233,7 @@ function edResetForProject(){
     </div>
     <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
     ovl.style.display='flex';
-    setTimeout(()=>{ edLoadExistingCoords(); }, 80);
+    edLoadExistingCoords();
   }
 }
 
@@ -1264,11 +1272,10 @@ function edLoadExistingCoords(){
     edColorIdx++;edRenderUnit(id);
   });
   edRenderList();edUpdateExp();
+  // Build KL table
   edBuildKLTable();
   if(Object.keys(edUnits).length)toast(`Đã load ${Object.keys(edUnits).length} căn từ ${CUR.name}`);
 }
-
-function edDoLoadCoords(){edLoadExistingCoords();}
 
 function edFitZoom(){const wrap=document.querySelector('.ed-canvas');const ww=wrap.clientWidth-50,wh=wrap.clientHeight-30;edZl=Math.min(ww/edW,wh/edH);edApplyZoom();}
 function edZoom(f){edZl=Math.min(6,Math.max(0.08,edZl*f));edApplyZoom();}
@@ -1343,49 +1350,9 @@ function edRenderList(){
   const ul=document.getElementById('ep-list');
   if(!ids.length){ul.innerHTML='<div class="ep-empty">🏗️<br>Chưa có căn nào</div>';return;}
   ul.innerHTML='';
-  ids.forEach(id=>{const u=edUnits[id];const d=document.createElement('div');d.className='ep-item'+(edSelId===id?' ep-sel':'');
-    d.innerHTML=`<div class="ep-ico" style="background:${u.color}"></div><div style="flex:1;min-width:0"><div class="ep-id">${id}</div><div class="ep-type">${u.type}${u.area?' · '+u.area+' m²':''}</div></div><button style="font-size:11px;color:#60a5fa;background:rgba(59,130,246,.1);border:1px solid #1e293b;border-radius:3px;padding:2px 7px;cursor:pointer;margin-right:3px;flex-shrink:0" onclick="edEditUnit('${id}',event)">✏️</button><button class="ep-del" onclick="edDelUnit('${id}',event)">✕</button>`;
-    ul.appendChild(d);});
+  ids.forEach(id=>{const u=edUnits[id];const d=document.createElement('div');d.className='ep-item'+(edSelId===id?' ep-sel':'');d.innerHTML=`<div class="ep-ico" style="background:${u.color}"></div><div style="flex:1;min-width:0"><div class="ep-id">${id}</div><div class="ep-type">${u.type}${u.area?' · '+u.area:''}</div></div><span class="ep-pts">${u.pts.length}pt</span><button class="ep-del" onclick="edDelUnit('${id}',event)">✕</button>`;ul.appendChild(d);});
 }
 function edDelUnit(id,e){e.stopPropagation();if(!confirm(`Xóa căn ${id}?`))return;delete edUnits[id];const el=document.getElementById('eu-'+id);if(el)el.remove();edRenderList();edUpdateExp();}
-
-function edEditUnit(id,e){
-  e.stopPropagation();
-  const u=edUnits[id];if(!u)return;
-  // Load thông tin căn lên form
-  document.getElementById('ep-id').value=id;
-  const typeEl=document.getElementById('ep-type');
-  if(typeEl){
-    // Tìm option khớp code hoặc name
-    const opts=Array.from(typeEl.options);
-    const match=opts.find(o=>o.value===u.type||o.text===u.type);
-    if(match) typeEl.value=match.value;
-  }
-  document.getElementById('ep-area').value=u.area||'';
-  document.getElementById('ep-imgurl').value=u.imgurl||'';
-  // Load KL table
-  edBuildKLTable();
-  if(u.klData&&u.klData.length){
-    u.klData.forEach(kl=>{
-      const row=document.querySelector(`.ep-kl-row[data-code="${kl.code}"]`);
-      if(row){
-        row.querySelector('.ep-kl-bt').value=kl.bt||'';
-        row.querySelector('.ep-kl-ct').value=kl.ct||'';
-        row.querySelector('.ep-kl-cf').value=kl.cf||'';
-      }
-    });
-  }
-  // Load polygon lên canvas
-  edPts=[...u.pts];edDrawing=false;
-  // Highlight polygon
-  edSelId=id;
-  // Xóa polygon cũ khỏi edUnits tạm thời để vẽ lại
-  document.getElementById('ep-ptsc').textContent=edPts.length;
-  document.getElementById('ep-ptsh').textContent=`Đang chỉnh sửa ${id} — Double-click để đóng hình`;
-  document.getElementById('ep-save').disabled=false;
-  edRenderList();
-  toast(`Đang chỉnh sửa căn ${id}`);
-}
 
 function edUpdateExp(){
   const ids=Object.keys(edUnits).sort();
@@ -1478,6 +1445,19 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();edUndo();}
 });
 document.addEventListener('keyup',e=>{const edActive=document.getElementById('tab-editor').classList.contains('active');if(e.key===' '&&edActive&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))edSetMode('draw');});
+
+// ════════════════════════════════════════
+// PROGRESS FORM
+// ════════════════════════════════════════
+function openProgressForm(){
+  if(!sel||!CUR)return;
+  // Google Form pre-fill URL
+  // Bạn cần update FORM_URL với Form ID thực tế
+  const FORM_URL='https://docs.google.com/forms/d/15NRhIOQAKG3ztid6TEr65rGtv9J-W4Nmux3C3ONWQnM/viewform';
+  // Pre-fill entry IDs - cần lấy từ Form (inspect element)
+  // Tạm thời mở Form không pre-fill, user tự chọn
+  window.open(FORM_URL,'_blank');
+}
 
 // ════════════════════════════════════════
 // PROGRESS FORM
