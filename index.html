@@ -946,7 +946,7 @@ function renderAll(){
   });
   document.getElementById('s-total').textContent=tot;document.getElementById('s-act').textContent=act;
   document.getElementById('s-done').textContent=done;document.getElementById('s-none').textContent=none;
-  buildLeg();if(sel)renderPanel(sel);
+  buildLeg();if(sel)showSinglePanel(sel);
 }
 function buildLeg(){
   const el=document.getElementById('li');el.innerHTML='';
