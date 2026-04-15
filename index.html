@@ -240,7 +240,11 @@ option{background:#0f172a}
 .ep-pts{font-size:8px;color:#334155;font-family:'JetBrains Mono',monospace;margin-left:auto;flex-shrink:0}
 .ep-del{font-size:9px;color:#475569;opacity:0;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;flex-shrink:0}
 .ep-del:hover{color:#ef4444}
-.ep-item:hover .ep-del{opacity:1}
+.ep-edit{font-size:10px;color:#475569;opacity:0;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:1px 4px;border-radius:3px;flex-shrink:0}
+.ep-edit:hover{color:#60a5fa}
+.ep-item:hover .ep-del,.ep-item:hover .ep-edit{opacity:1}
+.ep-item.ep-editing{border-color:#3b82f6;background:#0c1829}
+.ep-edit-badge{font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(59,130,246,.2);color:#60a5fa;flex-shrink:0;margin-left:2px}
 .ep-empty{text-align:center;padding:20px 10px;color:#334155;font-size:10px}
 .ep-export{padding:8px 11px;border-top:1px solid #1e293b;flex-shrink:0}
 .ep-exparea{width:100%;background:#0a0f1a;border:1px solid #1e293b;border-radius:4px;padding:5px 7px;font-size:8px;color:#60a5fa;font-family:'JetBrains Mono',monospace;height:70px;resize:none;outline:none}
@@ -483,7 +487,7 @@ option{background:#0f172a}
       </div>
       <div class="ed-panel">
         <div class="ep-sec">
-          <div class="ep-title">Thông tin căn <span class="ep-badge" id="ep-cnt">0</span></div>
+          <div class="ep-title">Thông tin căn <span class="ep-badge" id="ep-cnt">0</span><span class="ep-edit-badge" id="ep-edit-badge" style="display:none">✏️ ĐANG SỬA</span></div>
           <div class="efl">Mã căn (ID)</div><input class="efi" id="ep-id" placeholder="SD10-5, DV18-1 ...">
           <div class="efl">Loại căn</div>
           <select class="efi" id="ep-type"><option value="Biệt thự vườn">Biệt thự vườn</option><option value="Dinh thự đồi">Dinh thự đồi</option><option value="Dinh thự đồi góc">Dinh thự đồi góc</option></select>
@@ -499,7 +503,8 @@ option{background:#0f172a}
           <div class="epts"><div><span class="eptsn" id="ep-ptsc">0</span><span style="font-size:9px;color:#475569"> điểm</span></div><div class="eptsh" id="ep-ptsh">Click bản đồ để bắt đầu vẽ</div></div>
           <div class="ep-btns">
             <button class="epbtn epbtn-s" id="ep-save" disabled onclick="edSaveUnit()">✓ Lưu</button>
-            <button class="epbtn epbtn-c" onclick="edCancel()">✕ Hủy</button>
+            <button class="epbtn epbtn-c" id="ep-cancel-edit" onclick="edCancelEdit()" style="display:none;border-color:#3b82f6;color:#60a5fa">↩ Hủy sửa</button>
+            <button class="epbtn epbtn-c" id="ep-cancel-draw" onclick="edCancel()">✕ Hủy</button>
           </div>
         </div>
         <div class="ep-sec" style="padding-bottom:4px">
@@ -1146,7 +1151,7 @@ document.getElementById('a-color-hex').addEventListener('input',function(){if(/^
 // ════════════════════════════════════════
 let edZl=1,edMode='draw',edW=2000,edH=1500;
 let edPts=[],edDrawing=false,edPrevPt=null;
-let edUnits={},edSelId=null,edColorIdx=0;
+let edUnits={},edSelId=null,edColorIdx=0,edEditingId=null;
 const ED_COLS=['#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa','#fb923c','#e879f9','#2dd4bf','#4ade80','#f472b6'];
 
 const edSvg=document.getElementById('ed-svg'),edCi=document.getElementById('ed-ci'),edCs=document.getElementById('ed-cs');
@@ -1187,41 +1192,26 @@ function edNoImg(){
 
 function edResetForProject(){
   // Reset editor hoàn toàn cho dự án mới
-  edUnits={};edPolyL.innerHTML='';edImgL.innerHTML='';edColorIdx=0;edSelId=null;
+  edUnits={};edPolyL.innerHTML='';edImgL.innerHTML='';edColorIdx=0;edSelId=null;edEditingId=null;
   // Reset bg
   const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
-  edCancel();edRenderList();edUpdateExp();
-  // Nếu dự án có imageUrl → load ảnh tự động, không cần upload
+  edCancel();edCancelEditUI();edRenderList();edUpdateExp();
+  // Nếu dự án có imageUrl → dùng SVG image element trực tiếp (không dùng new Image() vì GitHub raw không fire onload cross-origin)
   if(CUR&&CUR.imageUrl){
     const ovl=document.getElementById('ed-ovl');
-    ovl.innerHTML='<div style="text-align:center;color:#94a3b8"><div class="spin" style="margin:0 auto 10px"></div><div style="font-size:12px">Đang tải ảnh mặt bằng...</div></div>';
-    ovl.style.display='flex';
-    const img=new Image();
-    img.onload=function(){
-      // Dùng kích thước từ Registry để đảm bảo khớp với tab Bản đồ
-      const w=CUR.imgW||img.naturalWidth, h=CUR.imgH||img.naturalHeight;
-      edInitSVG(w,h);
-      const si=edNs('image');si.setAttribute('href',CUR.imageUrl);si.setAttribute('x',0);si.setAttribute('y',0);
-      si.setAttribute('width',w);si.setAttribute('height',h);si.setAttribute('pointer-events','none');
-      edImgL.appendChild(si);
-      ovl.style.display='none';edFitZoom();
-      edLoadExistingCoords();
-    };
-    img.onerror=function(){
-      // Ảnh không load được → hiện overlay upload thủ công
-      ovl.innerHTML=`<div class="ed-dropbox" id="ed-dropbox" onclick="document.getElementById('ed-fileinp').click()">
-        <div style="font-size:34px;margin-bottom:6px">🗺️</div>
-        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:3px">Upload ảnh mặt bằng</div>
-        <div style="font-size:10px;color:#475569;margin-bottom:10px">Ảnh tự động không load được — upload thủ công</div>
-        <button style="font-family:inherit;font-size:10px;padding:6px 18px;border-radius:6px;cursor:pointer;border:none;background:var(--gold);color:#0a0f1a;font-weight:600" onclick="event.stopPropagation();document.getElementById('ed-fileinp').click()">Chọn ảnh</button>
-      </div>
-      <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
-      ovl.style.display='flex';
-      // Vẫn load polygon dù không có ảnh
-      edInitSVG(CUR.imgW||2000,CUR.imgH||1760);
-      edLoadExistingCoords();
-    };
-    img.src=CUR.imageUrl;
+    const w=CUR.imgW||2000, h=CUR.imgH||1760;
+    edInitSVG(w,h);
+    const si=edNs('image');
+    si.setAttribute('href',CUR.imageUrl);
+    si.setAttribute('x',0);si.setAttribute('y',0);
+    si.setAttribute('width',w);si.setAttribute('height',h);
+    si.setAttribute('preserveAspectRatio','xMidYMid meet');
+    si.setAttribute('pointer-events','none');
+    edImgL.appendChild(si);
+    ovl.style.display='none';
+    edFitZoom();
+    // setTimeout để đảm bảo SVG mount xong trước khi vẽ polygon
+    setTimeout(()=>{ edLoadExistingCoords(); }, 80);
   } else {
     // Không có imageUrl → hiện overlay upload
     const ovl=document.getElementById('ed-ovl');
@@ -1233,7 +1223,7 @@ function edResetForProject(){
     </div>
     <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
     ovl.style.display='flex';
-    edLoadExistingCoords();
+    setTimeout(()=>{ edLoadExistingCoords(); }, 80);
   }
 }
 
@@ -1309,9 +1299,15 @@ function edUpdatePtsCtr(){document.getElementById('ep-ptsc').textContent=edPts.l
 
 function edSaveUnit(){
   const id=document.getElementById('ep-id').value.trim().toUpperCase();
-  if(!id){toast('Nhập mã căn!','err');return;}if(edPts.length<3){toast('Cần ≥3 điểm!','err');return;}
-  const type=document.getElementById('ep-type').value;const area=document.getElementById('ep-area').value;const imgurl=document.getElementById('ep-imgurl').value;
-  // Collect KL data from table
+  if(!id){toast('Nhập mã căn!','err');return;}
+  // Khi vẽ mới: cần ≥3 điểm. Khi edit: có thể giữ polygon cũ nếu không vẽ lại
+  const isEdit=!!edEditingId;
+  const finalPts = edPts.length>=3 ? edPts : (isEdit&&edUnits[edEditingId]?edUnits[edEditingId].pts:[]);
+  if(finalPts.length<3){toast('Cần ≥3 điểm để xác định polygon!','err');return;}
+  const type=document.getElementById('ep-type').value;
+  const area=document.getElementById('ep-area').value;
+  const imgurl=document.getElementById('ep-imgurl').value;
+  // Collect KL data
   const klData=[];
   document.querySelectorAll('.ep-kl-row').forEach(row=>{
     const code=row.getAttribute('data-code');
@@ -1320,13 +1316,32 @@ function edSaveUnit(){
     const cf=parseFloat(row.querySelector('.ep-kl-cf').value)||0;
     klData.push({code,bt,ct,cf});
   });
-  const color=ED_COLS[edColorIdx%ED_COLS.length];edColorIdx++;
-  edUnits[id]={pts:[...edPts],type,area,imgurl,color,klData};
-  edRenderUnit(id);edRenderList();edUpdateExp();
+  // Lấy màu: nếu edit giữ màu cũ, nếu mới tạo màu mới
+  let color;
+  if(isEdit&&edEditingId===id&&edUnits[id]){
+    color=edUnits[id].color; // giữ màu cũ khi edit cùng ID
+  } else if(isEdit&&edEditingId!==id&&edUnits[edEditingId]){
+    color=edUnits[edEditingId].color; // đổi ID → giữ màu của căn cũ
+    // Xóa căn cũ nếu đổi ID
+    const oldEl=document.getElementById('eu-'+edEditingId);if(oldEl)oldEl.remove();
+    delete edUnits[edEditingId];
+  } else {
+    color=ED_COLS[edColorIdx%ED_COLS.length];edColorIdx++;
+  }
+  edUnits[id]={pts:[...finalPts],type,area,imgurl,color,klData};
+  edRenderUnit(id);
+  // Reset editing state
+  edEditingId=null;edSelId=id;
+  edCancelEditUI();
   edPts=[];edDrawing=false;edPrevPt=null;edPP.removeAttribute('points');edDots.forEach(d=>d.remove());edDots=[];
-  document.getElementById('ep-id').value='';document.getElementById('ep-area').value='';document.getElementById('ep-imgurl').value='';
-  document.getElementById('ep-save').disabled=true;document.getElementById('ep-ptsc').textContent='0';document.getElementById('ep-ptsh').textContent='Click bản đồ để bắt đầu vẽ';
-  toast(`✓ Đã lưu căn ${id}`);
+  document.getElementById('ep-id').value='';
+  document.getElementById('ep-area').value='';
+  document.getElementById('ep-imgurl').value='';
+  document.getElementById('ep-save').disabled=true;
+  document.getElementById('ep-ptsc').textContent='0';
+  document.getElementById('ep-ptsh').textContent='Click bản đồ để bắt đầu vẽ';
+  edRenderList();edUpdateExp();
+  toast(`✓ Đã ${isEdit?'cập nhật':'lưu'} căn ${id}`);
 }
 
 function edRenderUnit(id){
@@ -1341,7 +1356,14 @@ function edRenderUnit(id){
   poly.addEventListener('mouseleave',()=>poly.setAttribute('fill',edSelId===id?u.color+'44':u.color+'2a'));
 }
 
-function edCancel(){edPts=[];edDrawing=false;edPrevPt=null;edPP.removeAttribute('points');edDots.forEach(d=>d.remove());edDots=[];document.getElementById('ep-save').disabled=true;document.getElementById('ep-ptsc').textContent='0';document.getElementById('ep-ptsh').textContent='Click bản đồ để bắt đầu vẽ';}
+function edCancel(){
+  edPts=[];edDrawing=false;edPrevPt=null;edPP.removeAttribute('points');edDots.forEach(d=>d.remove());edDots=[];
+  if(!edEditingId){ // chỉ disable save khi không ở edit mode
+    document.getElementById('ep-save').disabled=true;
+  }
+  document.getElementById('ep-ptsc').textContent='0';
+  document.getElementById('ep-ptsh').textContent='Click bản đồ để bắt đầu vẽ';
+}
 function edUndo(){if(edPts.length>0){edPts.pop();edDrawing=edPts.length>0;edRenderPreview();edUpdatePtsCtr();document.getElementById('ep-save').disabled=edPts.length<3;}}
 
 function edRenderList(){
@@ -1350,9 +1372,72 @@ function edRenderList(){
   const ul=document.getElementById('ep-list');
   if(!ids.length){ul.innerHTML='<div class="ep-empty">🏗️<br>Chưa có căn nào</div>';return;}
   ul.innerHTML='';
-  ids.forEach(id=>{const u=edUnits[id];const d=document.createElement('div');d.className='ep-item'+(edSelId===id?' ep-sel':'');d.innerHTML=`<div class="ep-ico" style="background:${u.color}"></div><div style="flex:1;min-width:0"><div class="ep-id">${id}</div><div class="ep-type">${u.type}${u.area?' · '+u.area:''}</div></div><span class="ep-pts">${u.pts.length}pt</span><button class="ep-del" onclick="edDelUnit('${id}',event)">✕</button>`;ul.appendChild(d);});
+  ids.forEach(id=>{
+    const u=edUnits[id];const d=document.createElement('div');
+    d.className='ep-item'+(edSelId===id?' ep-sel':'')+(edEditingId===id?' ep-editing':'');
+    d.innerHTML=`<div class="ep-ico" style="background:${u.color}"></div><div style="flex:1;min-width:0"><div class="ep-id">${id}</div><div class="ep-type">${u.type}${u.area?' · '+u.area+' m²':''}</div></div><span class="ep-pts">${u.pts.length}pt</span><button class="ep-edit" title="Chỉnh sửa căn ${id}" onclick="edEditUnit('${id}',event)">✏️</button><button class="ep-del" onclick="edDelUnit('${id}',event)">✕</button>`;
+    ul.appendChild(d);
+  });
 }
-function edDelUnit(id,e){e.stopPropagation();if(!confirm(`Xóa căn ${id}?`))return;delete edUnits[id];const el=document.getElementById('eu-'+id);if(el)el.remove();edRenderList();edUpdateExp();}
+function edDelUnit(id,e){e.stopPropagation();if(!confirm(`Xóa căn ${id}?`))return;delete edUnits[id];const el=document.getElementById('eu-'+id);if(el)el.remove();if(edEditingId===id){edEditingId=null;edCancelEditUI();}edRenderList();edUpdateExp();}
+
+function edEditUnit(id,e){
+  if(e)e.stopPropagation();
+  const u=edUnits[id];if(!u)return;
+  // Set trạng thái editing
+  edEditingId=id;edSelId=id;
+  // Hiện badge + nút hủy sửa
+  document.getElementById('ep-edit-badge').style.display='';
+  document.getElementById('ep-cancel-edit').style.display='';
+  document.getElementById('ep-cancel-draw').style.display='none';
+  // Điền thông tin căn lên form
+  document.getElementById('ep-id').value=id;
+  // Loại căn
+  const typeEl=document.getElementById('ep-type');
+  if(typeEl){const opts=Array.from(typeEl.options);const match=opts.find(o=>o.value===u.type||o.text===u.type||o.value===u.type?.split('|')[0]?.trim());if(match)typeEl.value=match.value;}
+  // Diện tích và image URL
+  document.getElementById('ep-area').value=(u.area||'').replace(/\s*m²/,'');
+  document.getElementById('ep-imgurl').value=u.imgurl||'';
+  // Load KL data vào bảng
+  edBuildKLTable();
+  if(u.klData&&u.klData.length){
+    u.klData.forEach(kl=>{
+      const row=document.querySelector(`.ep-kl-row[data-code="${kl.code}"]`);
+      if(row){
+        row.querySelector('.ep-kl-bt').value=kl.bt||'';
+        row.querySelector('.ep-kl-ct').value=kl.ct||'';
+        row.querySelector('.ep-kl-cf').value=kl.cf||'';
+      }
+    });
+  }
+  // Load polygon hiện tại vào edPts để có thể vẽ lại nếu muốn
+  // (không vẽ lại cũng OK — edSaveUnit sẽ giữ polygon cũ)
+  edPts=[];edDrawing=false;edPrevPt=null;edPP.removeAttribute('points');edDots.forEach(d=>d.remove());edDots=[];
+  // Hiện số điểm polygon hiện tại
+  document.getElementById('ep-ptsc').textContent=u.pts.length;
+  document.getElementById('ep-ptsh').textContent=`Giữ nguyên ${u.pts.length} điểm cũ · Vẽ lại nếu muốn thay đổi`;
+  document.getElementById('ep-save').disabled=false;
+  // Highlight polygon trên canvas
+  edRenderList();
+  // Scroll panel lên đầu
+  const sec=document.querySelector('.ep-sec');if(sec)sec.scrollIntoView({behavior:'smooth',block:'start'});
+  toast(`✏️ Đang chỉnh sửa căn ${id} — sửa thông tin rồi nhấn Lưu`);
+}
+
+function edCancelEditUI(){
+  // Reset UI về trạng thái bình thường
+  document.getElementById('ep-edit-badge').style.display='none';
+  document.getElementById('ep-cancel-edit').style.display='none';
+  document.getElementById('ep-cancel-draw').style.display='';
+}
+
+function edCancelEdit(){
+  edEditingId=null;edSelId=null;
+  edCancelEditUI();
+  edCancel();
+  edRenderList();
+  toast('Đã hủy chỉnh sửa');
+}
 
 function edUpdateExp(){
   const ids=Object.keys(edUnits).sort();
