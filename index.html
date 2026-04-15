@@ -1457,23 +1457,44 @@ async function edWriteToSheet(){
   if(!ids.length){toast('Chưa có căn nào để ghi','err');return;}
   try{
     const btn=document.getElementById('ep-write');btn.textContent='Đang ghi...';btn.disabled=true;
-    // Clear MapConfig trước
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/MapConfig!A2:B1000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
-    // Ghi data mới
-    const values=ids.map(id=>{const u=edUnits[id];const pts=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');return[id,pts];});
-    await gapiWrite(CUR.sheetId,'MapConfig!A2:B',values);
-    // Ghi VillaInfo
-    const viValues=ids.filter(id=>edUnits[id].area||edUnits[id].type).map(id=>{const u=edUnits[id];
+    const idSet=new Set(ids);
+
+    // ── MapConfig: đọc hiện tại → xóa căn đang ghi → thêm mới ──
+    const existMap=await gapi(CUR.sheetId,'MapConfig!A:B');
+    const mapVals=existMap.values||[];
+    // Giữ header dòng 1 + các căn KHÔNG có trong idSet
+    const keptMap=mapVals.filter((row,i)=>i===0||!idSet.has(row[0]));
+    // Thêm các căn đang ghi
+    const newMapRows=ids.map(id=>{const u=edUnits[id];const pts=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');return[id,pts];});
+    const newMap=[...keptMap,...newMapRows];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/MapConfig!A1:B10000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
+    if(newMap.length){
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/MapConfig!A1:B${newMap.length}?valueInputOption=RAW`,{
+        method:'PUT',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+        body:JSON.stringify({values:newMap})
+      }).then(r=>r.json());
+    }
+
+    // ── VillaInfo: đọc hiện tại → xóa căn đang ghi → thêm mới ──
+    const existVI=await gapi(CUR.sheetId,'VillaInfo!A:E');
+    const viVals=existVI.values||[];
+    const keptVI=viVals.filter((row,i)=>i===0||!idSet.has(row[0]));
+    const newVIRows=ids.map(id=>{const u=edUnits[id];
       const typeCode=u.type;
       const ut=UNIT_TYPES.find(t=>t.name===typeCode||t.code===typeCode);
       const sub=ut?ut.nameEN:'';
       return[id,typeCode,sub,u.area||'',u.imgurl||''];
     });
-    if(viValues.length){
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/VillaInfo!A2:E1000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
-      await gapiWrite(CUR.sheetId,'VillaInfo!A2:E',viValues);
+    const newVI=[...keptVI,...newVIRows];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/VillaInfo!A1:E10000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
+    if(newVI.length){
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/VillaInfo!A1:E${newVI.length}?valueInputOption=RAW`,{
+        method:'PUT',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+        body:JSON.stringify({values:newVI})
+      }).then(r=>r.json());
     }
-    // Ghi KLDinhMuc — xóa data cũ của các căn này trước, rồi ghi mới
+
+    // ── KLDinhMuc: đọc hiện tại → xóa căn đang ghi → thêm mới ──
     const klRows=[];
     ids.forEach(id=>{
       const u=edUnits[id];
@@ -1483,34 +1504,23 @@ async function edWriteToSheet(){
         });
       }
     });
-    // Luôn xử lý KLDinhMuc: xóa dòng cũ của các căn đang ghi, rồi ghi mới
     try{
-      // Đọc toàn bộ KLDinhMuc
       const existKL=await gapi(CUR.sheetId,'KLDinhMuc!A:E');
       const klVals=existKL.values||[];
-      const idSet=new Set(ids);
-      // Giữ lại header (dòng 1) và các dòng không thuộc căn đang ghi
-      const kept=klVals.filter((row,i)=>{
-        if(i===0) return true; // giữ header
-        return !idSet.has(row[0]); // giữ căn khác
-      });
-      // Ghi lại toàn bộ KLDinhMuc = kept + klRows mới
-      const newKL=[...kept,...klRows];
-      // Xóa toàn bộ KLDinhMuc trước
+      const keptKL=klVals.filter((row,i)=>i===0||!idSet.has(row[0]));
+      const newKL=[...keptKL,...klRows];
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/KLDinhMuc!A1:E10000:clear`,{
         method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}
       });
-      // Ghi lại từ A1
       if(newKL.length){
         await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/KLDinhMuc!A1:E${newKL.length}?valueInputOption=RAW`,{
-          method:'PUT',
-          headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+          method:'PUT',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
           body:JSON.stringify({values:newKL})
         }).then(r=>r.json());
       }
     }catch(e){toast('Lỗi ghi KLDinhMuc: '+e.message,'err');}
-    toast(`✓ Đã ghi ${ids.length} căn lên Sheet ${CUR.name}!`);
-    // Refresh data
+
+    toast(`✓ Đã cập nhật ${ids.length} căn lên Sheet ${CUR.name}!`);
     await loadProjectData();
   }catch(e){toast('Lỗi ghi Sheet: '+e.message,'err');}
   finally{const btn=document.getElementById('ep-write');btn.textContent='☁ Ghi Sheet';btn.disabled=false;}
