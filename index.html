@@ -1197,37 +1197,23 @@ function edResetForProject(){
   // Reset bg
   const newBg=edNs('rect');newBg.setAttribute('fill','#1e293b');newBg.setAttribute('width',edW);newBg.setAttribute('height',edH);edImgL.appendChild(newBg);
   edCancel();edRenderList();edUpdateExp();
-  // Nếu dự án có imageUrl → load ảnh tự động, không cần upload
+  // Nếu dự án có imageUrl → dùng SVG image element trực tiếp (không dùng new Image() vì GitHub raw không fire onload cross-origin)
   if(CUR&&CUR.imageUrl){
     const ovl=document.getElementById('ed-ovl');
-    ovl.innerHTML='<div style="text-align:center;color:#94a3b8"><div class="spin" style="margin:0 auto 10px"></div><div style="font-size:12px">Đang tải ảnh mặt bằng...</div></div>';
-    ovl.style.display='flex';
-    const img=new Image();
-    img.onload=function(){
-      // Dùng kích thước từ Registry để đảm bảo khớp với tab Bản đồ
-      const w=CUR.imgW||img.naturalWidth, h=CUR.imgH||img.naturalHeight;
-      edInitSVG(w,h);
-      const si=edNs('image');si.setAttribute('href',CUR.imageUrl);si.setAttribute('x',0);si.setAttribute('y',0);
-      si.setAttribute('width',w);si.setAttribute('height',h);si.setAttribute('pointer-events','none');
-      edImgL.appendChild(si);
-      ovl.style.display='none';edFitZoom();
-      edLoadExistingCoords();
-    };
-    img.onerror=function(){
-      // Ảnh không load được → hiện overlay upload thủ công
-      ovl.innerHTML=`<div class="ed-dropbox" id="ed-dropbox" onclick="document.getElementById('ed-fileinp').click()">
-        <div style="font-size:34px;margin-bottom:6px">🗺️</div>
-        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:3px">Upload ảnh mặt bằng</div>
-        <div style="font-size:10px;color:#475569;margin-bottom:10px">Ảnh tự động không load được — upload thủ công</div>
-        <button style="font-family:inherit;font-size:10px;padding:6px 18px;border-radius:6px;cursor:pointer;border:none;background:var(--gold);color:#0a0f1a;font-weight:600" onclick="event.stopPropagation();document.getElementById('ed-fileinp').click()">Chọn ảnh</button>
-      </div>
-      <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
-      ovl.style.display='flex';
-      // Vẫn load polygon dù không có ảnh
-      edInitSVG(CUR.imgW||2000,CUR.imgH||1760);
-      edLoadExistingCoords();
-    };
-    img.src=CUR.imageUrl;
+    const w=CUR.imgW||2000, h=CUR.imgH||1760;
+    edInitSVG(w,h);
+    // Append SVG image trực tiếp vào layer — giống cách tab Bản đồ hoạt động
+    const si=edNs('image');
+    si.setAttribute('href',CUR.imageUrl);
+    si.setAttribute('x',0);si.setAttribute('y',0);
+    si.setAttribute('width',w);si.setAttribute('height',h);
+    si.setAttribute('preserveAspectRatio','xMidYMid meet');
+    si.setAttribute('pointer-events','none');
+    edImgL.appendChild(si);
+    ovl.style.display='none';
+    edFitZoom();
+    // Dùng setTimeout nhỏ để đảm bảo SVG đã mount vào DOM trước khi vẽ polygon
+    setTimeout(()=>{ edLoadExistingCoords(); }, 80);
   } else {
     // Không có imageUrl → hiện overlay upload
     const ovl=document.getElementById('ed-ovl');
@@ -1239,7 +1225,7 @@ function edResetForProject(){
     </div>
     <button style="font-family:inherit;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;border:1px solid #1e293b;background:transparent;color:#475569" onclick="edNoImg()">▶ Không có ảnh nền</button>`;
     ovl.style.display='flex';
-    edLoadExistingCoords();
+    setTimeout(()=>{ edLoadExistingCoords(); }, 80);
   }
 }
 
