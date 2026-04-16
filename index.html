@@ -1090,23 +1090,21 @@ function renderAll(){
 
 function buildLeg(){
   const el=document.getElementById('li');el.innerHTML='';
-  // Đếm số căn theo milestone
-  const msCounts={};
-  Object.values(SD).forEach(s=>{if(s&&s.ms)msCounts[s.ms]=(msCounts[s.ms]||0)+1;});
+  const tot=Object.keys(COORDS).length;
   const noneCount=Object.keys(COORDS).filter(id=>!SD[id]||!SD[id].ms).length;
   const used=new Set(Object.values(SD).map(s=>s&&s.ms).filter(Boolean));
   MS.forEach((m,i)=>{
     if(!used.has(m))return;
-    const cnt=msCounts[m]||0;
+    // Cộng dồn: số căn có milestone index >= i (đã qua hoặc đang ở mốc này)
+    const cnt=Object.values(SD).filter(s=>s&&s.ms&&mi(s.ms)>=i).length;
     const isActive=msFilter===m;
     const isInactive=msFilter!==null&&msFilter!==m;
     const div=document.createElement('div');
     div.className='lr'+(isActive?' leg-active':'')+(isInactive?' leg-inactive':'');
-    div.innerHTML=`<div class="ld" style="background:${MC[i]}"></div><span style="flex:1">${m}</span><span class="leg-cnt">${cnt}</span>`;
+    div.innerHTML=`<div class="ld" style="background:${MC[i]}"></div><span style="flex:1">${m}</span><span class="leg-cnt">${cnt}/${tot}</span>`;
     div.addEventListener('click',()=>toggleMsFilter(m));
     el.appendChild(div);
   });
-  // Hàng "Chưa bắt đầu"
   const noneRow=document.getElementById('leg-none-row');
   if(noneRow){
     document.getElementById('leg-none-cnt').textContent=noneCount;
@@ -1977,16 +1975,18 @@ function renderMobileOverview(){
   if(!CUR)return;
   document.getElementById('mob-proj-name').textContent=CUR.name;
   document.getElementById('mob-upd-date').textContent=new Date().toLocaleDateString('vi-VN');
-  // Milestone progress
-  const msCounts={};
-  Object.values(SD).forEach(s=>{if(s&&s.ms)msCounts[s.ms]=(msCounts[s.ms]||0)+1;});
   const tot=Object.keys(COORDS).length;
   const mobMsList=document.getElementById('mob-ms-list');
   mobMsList.innerHTML='';
-  const used=new Set(Object.values(SD).map(s=>s&&s.ms).filter(Boolean));
+  // Đếm cộng dồn: căn đang ở mốc i đã đi qua tất cả mốc 0..i
+  // → số căn ĐÃ XONG mốc m = số căn có milestone index >= index của m
   MS.forEach((m,i)=>{
-    if(!used.has(m))return;
-    const cnt=msCounts[m]||0;
+    // Đếm số căn có milestone hiện tại >= mốc này (đã qua hoặc đang ở mốc này)
+    const cnt=Object.values(SD).filter(s=>{
+      if(!s||!s.ms)return false;
+      return mi(s.ms)>=i;
+    }).length;
+    if(cnt===0)return; // Ẩn mốc chưa có căn nào đạt
     const pct=tot>0?Math.round(cnt/tot*100):0;
     mobMsList.innerHTML+=`<div class="mob-ms-row">
       <div class="mob-ms-dot" style="background:${MC[i]}"></div>
