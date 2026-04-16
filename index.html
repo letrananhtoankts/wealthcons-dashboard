@@ -1254,15 +1254,24 @@ function edLoadExistingCoords(){
   edUnits={};edPolyL.innerHTML='';edColorIdx=0;
   Object.entries(COORDS).forEach(([id,pts])=>{
     const vi=VI[id]||{};
+    // Rebuild klData từ KL global (đã load từ KLTongHop khi mở dự án)
+    // Nhưng KL chỉ có done/plan, không có từng mốc → dùng KLDinhMuc raw nếu có
+    // Tạm thời build klData rỗng, khi edit user có thể nhập lại
+    // QUAN TRỌNG: khi Ghi Sheet, các căn không edit sẽ được giữ từ Sheet (merge logic)
+    const klData=MS_CODES.map(code=>({code,bt:0,ct:0,cf:0}));
+    // Lấy area: VI lưu dạng "120 m²", cần bỏ " m²"
+    const areaRaw=(vi.area||'').replace(/\s*m²/,'').trim();
     edUnits[id]={
       pts:pts.split(' ').map(p=>{const[x,y]=p.split(',').map(Number);return{x,y};}),
-      type:vi.type||'Biệt thự vườn',area:vi.area||'',color:ED_COLS[edColorIdx%ED_COLS.length],
-      klData:[]
+      type:vi.type||'BTV',
+      area:areaRaw,
+      imgurl:vi.imageUrl||'',
+      color:ED_COLS[edColorIdx%ED_COLS.length],
+      klData
     };
     edColorIdx++;edRenderUnit(id);
   });
   edRenderList();edUpdateExp();
-  // Build KL table
   edBuildKLTable();
   if(Object.keys(edUnits).length)toast(`Đã load ${Object.keys(edUnits).length} căn từ ${CUR.name}`);
 }
@@ -1459,13 +1468,15 @@ async function edWriteToSheet(){
     const btn=document.getElementById('ep-write');btn.textContent='Đang ghi...';btn.disabled=true;
     const idSet=new Set(ids);
 
-    // ── MapConfig: đọc hiện tại → xóa căn đang ghi → thêm mới ──
+    // ── MapConfig: đọc Sheet → giữ căn khác → thêm/ghi đè căn đang edit ──
     const existMap=await gapi(CUR.sheetId,'MapConfig!A:B');
     const mapVals=existMap.values||[];
-    // Giữ header dòng 1 + các căn KHÔNG có trong idSet
     const keptMap=mapVals.filter((row,i)=>i===0||!idSet.has(row[0]));
-    // Thêm các căn đang ghi
-    const newMapRows=ids.map(id=>{const u=edUnits[id];const pts=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');return[id,pts];});
+    const newMapRows=ids.map(id=>{
+      const u=edUnits[id];
+      const pts=u.pts.map(p=>`${Math.round(p.x*10)/10},${Math.round(p.y*10)/10}`).join(' ');
+      return[id,pts];
+    });
     const newMap=[...keptMap,...newMapRows];
     await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/MapConfig!A1:B10000:clear`,{method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}});
     if(newMap.length){
@@ -1475,11 +1486,12 @@ async function edWriteToSheet(){
       }).then(r=>r.json());
     }
 
-    // ── VillaInfo: đọc hiện tại → xóa căn đang ghi → thêm mới ──
+    // ── VillaInfo: đọc Sheet → giữ căn khác → thêm/ghi đè căn đang edit ──
     const existVI=await gapi(CUR.sheetId,'VillaInfo!A:E');
     const viVals=existVI.values||[];
     const keptVI=viVals.filter((row,i)=>i===0||!idSet.has(row[0]));
-    const newVIRows=ids.map(id=>{const u=edUnits[id];
+    const newVIRows=ids.map(id=>{
+      const u=edUnits[id];
       const typeCode=u.type;
       const ut=UNIT_TYPES.find(t=>t.name===typeCode||t.code===typeCode);
       const sub=ut?ut.nameEN:'';
@@ -1494,21 +1506,28 @@ async function edWriteToSheet(){
       }).then(r=>r.json());
     }
 
-    // ── KLDinhMuc: đọc hiện tại → xóa căn đang ghi → thêm mới ──
-    const klRows=[];
-    ids.forEach(id=>{
-      const u=edUnits[id];
-      if(u.klData&&u.klData.length){
-        u.klData.forEach(kl=>{
-          if(kl.bt||kl.ct||kl.cf) klRows.push([id,kl.code,kl.bt,kl.ct,kl.cf]);
-        });
-      }
-    });
+    // ── KLDinhMuc: đọc Sheet → giữ tất cả căn khác nguyên vẹn → chỉ ghi đè căn trong idSet nếu có klData thực ──
     try{
       const existKL=await gapi(CUR.sheetId,'KLDinhMuc!A:E');
       const klVals=existKL.values||[];
+      // Giữ header + tất cả dòng KHÔNG thuộc idSet
       const keptKL=klVals.filter((row,i)=>i===0||!idSet.has(row[0]));
-      const newKL=[...keptKL,...klRows];
+      // Chỉ ghi KL mới nếu user đã nhập số > 0
+      const newKLRows=[];
+      ids.forEach(id=>{
+        const u=edUnits[id];
+        if(u.klData&&u.klData.length){
+          u.klData.forEach(kl=>{
+            if(kl.bt||kl.ct||kl.cf) newKLRows.push([id,kl.code,kl.bt,kl.ct,kl.cf]);
+          });
+        }
+      });
+      // Nếu căn trong idSet không có KL mới nào (user không nhập) → giữ nguyên dòng cũ từ Sheet
+      const idsWithNewKL=new Set(newKLRows.map(r=>r[0]));
+      const idsWithoutNewKL=ids.filter(id=>!idsWithNewKL.has(id));
+      // Với căn không có KL mới: giữ lại dòng cũ từ Sheet
+      const keepOldKL=klVals.filter((row,i)=>i>0&&idsWithoutNewKL.includes(row[0]));
+      const newKL=[...keptKL,...keepOldKL,...newKLRows];
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/KLDinhMuc!A1:E10000:clear`,{
         method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}
       });
@@ -1520,7 +1539,7 @@ async function edWriteToSheet(){
       }
     }catch(e){toast('Lỗi ghi KLDinhMuc: '+e.message,'err');}
 
-    toast(`✓ Đã cập nhật ${ids.length} căn lên Sheet ${CUR.name}!`);
+    toast(`✓ Đã cập nhật ${ids.length} căn · Dữ liệu các căn khác giữ nguyên`);
     await loadProjectData();
   }catch(e){toast('Lỗi ghi Sheet: '+e.message,'err');}
   finally{const btn=document.getElementById('ep-write');btn.textContent='☁ Ghi Sheet';btn.disabled=false;}
