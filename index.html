@@ -1961,7 +1961,17 @@ async function chotTuan(){
   });
   btn.disabled=true;btn.textContent='Đang ghi...';
   try{
-    await gapiWrite(CUR.sheetId,`${WEEKLY_SHEET}!A:I`,[[wkLabel,dateStr,cd.toFixed(1),rd.toFixed(3),fd.toFixed(1),act,cp.toFixed(1),rp.toFixed(3),fp.toFixed(1)]]);
+    // Dùng USER_ENTERED để số được nhận dạng đúng, không bị ghi dạng text
+    const rowData=[wkLabel, dateStr,
+      parseFloat(cd.toFixed(1)), parseFloat(rd.toFixed(3)), parseFloat(fd.toFixed(1)),
+      act,
+      parseFloat(cp.toFixed(1)), parseFloat(rp.toFixed(3)), parseFloat(fp.toFixed(1))
+    ];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/${WEEKLY_SHEET}!A:I:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+      body:JSON.stringify({values:[rowData]})
+    }).then(r=>r.json());
     toast(`✓ Đã chốt ${wkLabel} — BT:${cd.toFixed(0)}m³ CT:${rd.toFixed(1)}t CF:${fd.toFixed(0)}m²`);
     await loadWeeklyData();
   }catch(e){toast('Lỗi ghi Sheet: '+e.message,'err');}
