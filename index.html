@@ -119,10 +119,75 @@ header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;displ
 .zc{position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:3px;z-index:10}
 .zb{width:26px;height:26px;background:#1e293b;border:1px solid #334155;border-radius:5px;font-size:12px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-family:inherit}
 .zb:hover{background:#334155;color:#f1f5f9}
-.leg{position:absolute;bottom:12px;left:12px;background:rgba(15,23,42,.92);border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:10px;z-index:10;max-height:160px;overflow-y:auto}
+.leg{position:absolute;bottom:12px;left:12px;background:rgba(15,23,42,.92);border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:10px;z-index:10;max-height:200px;overflow-y:auto}
 .lt{font-size:8px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.lr{display:flex;align-items:center;gap:5px;margin-bottom:3px;color:#94a3b8}
+.lr{display:flex;align-items:center;gap:5px;margin-bottom:3px;color:#94a3b8;cursor:pointer;border-radius:5px;padding:2px 5px;transition:all .15s;user-select:none}
+.lr:hover{background:rgba(255,255,255,.07);color:#f1f5f9}
+.lr.leg-active{background:rgba(255,255,255,.12);color:#f1f5f9;font-weight:600}
+.lr.leg-inactive{opacity:.35}
 .ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.leg-cnt{font-size:8px;margin-left:auto;background:rgba(255,255,255,.1);border-radius:6px;padding:0px 5px;font-weight:700}
+/* Filter badge trên map */
+.filter-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);border:1px solid #3b82f6;border-radius:20px;padding:4px 14px;font-size:10px;color:#93c5fd;z-index:11;display:none;align-items:center;gap:8px;white-space:nowrap}
+.filter-badge b{color:#f1f5f9}
+.filter-clr{font-size:9px;color:#f87171;cursor:pointer;background:rgba(248,113,113,.15);border-radius:8px;padding:1px 7px;margin-left:4px}
+.filter-clr:hover{background:rgba(248,113,113,.3)}
+
+/* WEEKLY SNAPSHOT */
+.weekly-btn{font-family:inherit;font-size:10px;color:#fbbf24;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:4px 12px;cursor:pointer;margin-left:6px;transition:all .15s}
+.weekly-btn:hover{background:rgba(251,191,36,.25)}
+.weekly-panel{display:none;position:fixed;inset:0;background:rgba(10,15,26,.85);z-index:200;align-items:center;justify-content:center}
+.weekly-panel.show{display:flex}
+.weekly-box{background:#111827;border:1px solid #1e293b;border-radius:16px;width:min(96vw,720px);max-height:88vh;overflow:hidden;display:flex;flex-direction:column}
+.weekly-hdr{padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.weekly-title{font-size:14px;font-weight:700;color:#f1f5f9}
+.weekly-close{font-size:18px;color:#475569;cursor:pointer;background:none;border:none;font-family:inherit;line-height:1}
+.weekly-close:hover{color:#f1f5f9}
+.weekly-body{padding:16px 20px;overflow-y:auto;flex:1}
+.weekly-chart-wrap{height:220px;margin-bottom:16px}
+.weekly-table{width:100%;border-collapse:collapse;font-size:10px}
+.weekly-table th{background:#0f172a;color:#64748b;font-weight:600;padding:5px 8px;text-align:center;border-bottom:1px solid #1e293b;font-size:8px;text-transform:uppercase;letter-spacing:.04em}
+.weekly-table td{padding:5px 8px;text-align:center;border-bottom:1px solid #0f172a;color:#94a3b8}
+.weekly-table tr:hover td{background:#0f172a}
+.weekly-table td:first-child{color:#f1f5f9;font-weight:600;text-align:left}
+.weekly-footer{padding:12px 20px;border-top:1px solid #1e293b;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.weekly-confirm-btn{font-family:inherit;font-size:11px;padding:7px 20px;border-radius:8px;cursor:pointer;border:none;font-weight:700;background:var(--gold);color:#0f172a;transition:all .15s}
+.weekly-confirm-btn:hover{background:#d4b57a}
+.weekly-confirm-btn:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
+.week-badge{font-size:9px;background:rgba(251,191,36,.15);color:#fbbf24;border-radius:8px;padding:2px 8px;font-weight:700}
+.week-remind{font-size:10px;color:#f59e0b;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:4px 12px;margin-left:6px}
+
+/* MOBILE OVERVIEW */
+@media (max-width:767px){
+  /* Ẩn desktop tabs trên mobile */
+  #htab-editor,#htab-admin{display:none!important}
+  /* Ẩn tab map desktop, hiện mobile overview */
+  #tab-map{display:none!important}
+  #tab-mobile-overview{display:flex!important}
+  /* Header compact */
+  header{padding:4px 10px;gap:6px}
+  .h-tabs{display:none}
+  .h-auth-mini,.lupd,.rbtn{display:none!important}
+}
+#tab-mobile-overview{display:none;flex-direction:column;flex:1;overflow-y:auto;background:#0a0f1a;padding:12px}
+.mob-section{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px;margin-bottom:12px}
+.mob-sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:10px}
+.mob-proj-name{font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:2px}
+.mob-proj-date{font-size:10px;color:#475569}
+.mob-ms-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mob-ms-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mob-ms-name{font-size:11px;color:#94a3b8;flex:1}
+.mob-ms-bar-wrap{width:100px;height:6px;background:#1e293b;border-radius:3px;overflow:hidden;flex-shrink:0}
+.mob-ms-bar-fill{height:100%;border-radius:3px}
+.mob-ms-count{font-size:10px;font-weight:700;color:#f1f5f9;min-width:40px;text-align:right;flex-shrink:0}
+.mob-ms-pct{font-size:9px;color:#475569;min-width:32px;text-align:right;flex-shrink:0}
+.mob-kl-row{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.mob-kl-label{font-size:10px;color:#94a3b8;width:24px;flex-shrink:0}
+.mob-kl-bar-wrap{flex:1;height:8px;background:#1e293b;border-radius:4px;overflow:hidden}
+.mob-kl-bar-fill{height:100%;border-radius:4px;transition:width .6s}
+.mob-kl-nums{font-size:9px;color:#64748b;min-width:80px;text-align:right;flex-shrink:0}
+.mob-kl-pct{font-size:9px;font-weight:700;min-width:34px;text-align:right;flex-shrink:0}
+.mob-chart-wrap{height:160px;position:relative}
 #rubberband{position:fixed;border:2px dashed #fbbf24;background:rgba(251,191,36,.08);pointer-events:none;display:none;z-index:9999}
 .map-loading{position:absolute;inset:0;background:rgba(15,23,42,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:20;font-size:12px;color:#94a3b8}
 
@@ -358,8 +423,63 @@ option{background:#0f172a}
       <span class="h-auth-name" id="h-auth-name"></span>
     </div>
     <span class="lupd" id="lupd">—</span>
+    <button class="weekly-btn" onclick="openWeekly()">📊 Tuần</button>
     <button class="rbtn" onclick="refreshData()">↻</button>
   </header>
+
+  <!-- WEEKLY SNAPSHOT MODAL -->
+  <div class="weekly-panel" id="weekly-panel">
+    <div class="weekly-box">
+      <div class="weekly-hdr">
+        <div>
+          <div class="weekly-title">📊 Sản lượng theo tuần</div>
+          <div style="font-size:10px;color:#475569;margin-top:2px" id="weekly-proj-sub">—</div>
+        </div>
+        <button class="weekly-close" onclick="closeWeekly()">✕</button>
+      </div>
+      <div class="weekly-body">
+        <div class="weekly-chart-wrap"><canvas id="weekly-chart"></canvas></div>
+        <table class="weekly-table" id="weekly-table">
+          <thead><tr><th>Tuần</th><th>Ngày chốt</th><th>BT (m³)</th><th>CT (tấn)</th><th>CF (m²)</th><th>Căn TC</th><th>BT tuần</th><th>CT tuần</th><th>CF tuần</th></tr></thead>
+          <tbody id="weekly-tbody"></tbody>
+        </table>
+      </div>
+      <div class="weekly-footer">
+        <div>
+          <div style="font-size:10px;color:#64748b" id="weekly-status-txt">Chốt vào: <span id="weekly-day-label">—</span></div>
+          <div style="font-size:9px;color:#334155;margin-top:2px" id="weekly-last-txt">—</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <span id="weekly-remind" class="week-remind" style="display:none">⏰ Đến ngày chốt tuần!</span>
+          <select id="weekly-day-sel" style="font-family:inherit;font-size:10px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;padding:4px 8px;color:#94a3b8;cursor:pointer">
+            <option value="0">Chủ nhật</option><option value="1">Thứ 2</option><option value="2">Thứ 3</option>
+            <option value="3">Thứ 4</option><option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option>
+          </select>
+          <button class="weekly-confirm-btn" id="weekly-chot-btn" onclick="chotTuan()">✓ Chốt tuần này</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: MOBILE OVERVIEW (chỉ hiện trên mobile) -->
+  <div id="tab-mobile-overview">
+    <div class="mob-section">
+      <div class="mob-proj-name" id="mob-proj-name">—</div>
+      <div class="mob-proj-date">Cập nhật: <span id="mob-upd-date">—</span></div>
+    </div>
+    <div class="mob-section">
+      <div class="mob-sec-title">Tiến độ Milestone</div>
+      <div id="mob-ms-list"></div>
+    </div>
+    <div class="mob-section">
+      <div class="mob-sec-title">Khối lượng tổng</div>
+      <div id="mob-kl-list"></div>
+    </div>
+    <div class="mob-section">
+      <div class="mob-sec-title">Sản lượng tuần</div>
+      <div class="mob-chart-wrap"><canvas id="mob-weekly-chart"></canvas></div>
+    </div>
+  </div>
 
   <!-- TAB: MAP -->
   <div class="tab-content active" id="tab-map">
@@ -407,7 +527,11 @@ option{background:#0f172a}
             <g id="pg"></g>
           </svg>
         </div></div>
-        <div class="leg"><div class="lt">Tiến độ</div><div id="li"></div><div class="lr"><div class="ld" style="background:#374151"></div>Chưa bắt đầu</div></div>
+        <div class="filter-badge" id="filter-badge">
+          🔍 Lọc: <b id="filter-badge-name">—</b>&nbsp;<span id="filter-badge-stat">—</span>
+          <span class="filter-clr" onclick="clearMsFilter()">✕ Xóa filter</span>
+        </div>
+        <div class="leg"><div class="lt">Tiến độ · Click để lọc</div><div id="li"></div><div class="lr" onclick="clearMsFilter()" id="leg-none-row"><div class="ld" style="background:#374151"></div><span style="flex:1">Chưa bắt đầu</span><span class="leg-cnt" id="leg-none-cnt">—</span></div></div>
         <div class="zc"><div class="zb" onclick="zoom(1.25)">+</div><div class="zb" onclick="zoom(0.8)">−</div><div class="zb" onclick="resetZoom()" style="font-size:8px">FIT</div></div>
         <div id="rubberband"></div>
       </div>
@@ -617,6 +741,7 @@ let UNIT_TYPES = [{code:'BTV',name:'Biệt thự vườn'},{code:'DTD',name:'Din
 let PROJECTS=[], CUR=null, COORDS={}, VI={}, SD={}, KL={};
 let sel=null, multiSel=new Set(), zl=0.7, klChart=null, refreshTimer=null;
 let mapW=2000, mapH=1760;
+let msFilter=null; // milestone filter hiện tại
 // Auth
 let authToken=null, authUser=null, tokenClient=null, userRole='viewer';
 
@@ -889,8 +1014,9 @@ async function loadProjectData(){
       const id=row[0];if(!id)return;
       VI[id]={type:row[1]||'—',sub:row[2]||'—',area:row[3]?row[3]+' m²':'—',imageUrl:driveDirect(row[4]||'')};
     });
-    setupMapSVG();updateProjSummary();
+    setupMapSVG();updateProjSummary();renderMobileOverview();
     document.getElementById('lupd').textContent='Cập nhật: '+new Date().toLocaleTimeString('vi-VN');
+    document.getElementById('mob-upd-date').textContent=new Date().toLocaleDateString('vi-VN');
   }catch(e){
     document.getElementById('map-loading-txt').textContent='Lỗi: '+e.message;
     document.getElementById('lupd').textContent='Lỗi';
@@ -933,7 +1059,19 @@ function renderAll(){
     tot++;const s=SD[id],i=s?mi(s.ms):-1;
     if(!s||!s.ms)none++;else if(i===MS.length-1)done++;else act++;
     const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-    poly.setAttribute('points',pts);poly.setAttribute('fill',gc(id));poly.setAttribute('opacity','0.82');
+    poly.setAttribute('points',pts);
+    // Milestone filter logic
+    if(msFilter!==null){
+      const unitMs=s?s.ms:null;
+      const unitMsIdx=unitMs?mi(unitMs):-1;
+      const filterIdx=mi(msFilter);
+      // Căn đạt milestone được filter (đã qua hoặc đang ở mốc đó)
+      const matched = unitMsIdx>=filterIdx && filterIdx>=0;
+      poly.setAttribute('fill', matched ? gc(id) : '#1e293b');
+      poly.setAttribute('opacity', matched ? '0.9' : '0.25');
+    } else {
+      poly.setAttribute('fill',gc(id));poly.setAttribute('opacity','0.82');
+    }
     poly.setAttribute('id','p-'+id.replace(/[^a-zA-Z0-9]/g,'-'));
     if(sel===id)poly.classList.add('sel');if(multiSel.has(id))poly.classList.add('multi-sel');
     poly.addEventListener('click',e=>handleClick(e,id));g.appendChild(poly);
@@ -947,11 +1085,55 @@ function renderAll(){
   document.getElementById('s-total').textContent=tot;document.getElementById('s-act').textContent=act;
   document.getElementById('s-done').textContent=done;document.getElementById('s-none').textContent=none;
   buildLeg();if(sel)showSinglePanel(sel);
+  updateFilterBadge();
 }
+
 function buildLeg(){
   const el=document.getElementById('li');el.innerHTML='';
+  // Đếm số căn theo milestone
+  const msCounts={};
+  Object.values(SD).forEach(s=>{if(s&&s.ms)msCounts[s.ms]=(msCounts[s.ms]||0)+1;});
+  const noneCount=Object.keys(COORDS).filter(id=>!SD[id]||!SD[id].ms).length;
   const used=new Set(Object.values(SD).map(s=>s&&s.ms).filter(Boolean));
-  MS.forEach((m,i)=>{if(used.has(m))el.innerHTML+=`<div class="lr"><div class="ld" style="background:${MC[i]}"></div>${m}</div>`;});
+  MS.forEach((m,i)=>{
+    if(!used.has(m))return;
+    const cnt=msCounts[m]||0;
+    const isActive=msFilter===m;
+    const isInactive=msFilter!==null&&msFilter!==m;
+    const div=document.createElement('div');
+    div.className='lr'+(isActive?' leg-active':'')+(isInactive?' leg-inactive':'');
+    div.innerHTML=`<div class="ld" style="background:${MC[i]}"></div><span style="flex:1">${m}</span><span class="leg-cnt">${cnt}</span>`;
+    div.addEventListener('click',()=>toggleMsFilter(m));
+    el.appendChild(div);
+  });
+  // Hàng "Chưa bắt đầu"
+  const noneRow=document.getElementById('leg-none-row');
+  if(noneRow){
+    document.getElementById('leg-none-cnt').textContent=noneCount;
+    noneRow.className='lr'+(msFilter===null?'':' leg-inactive');
+  }
+}
+
+function toggleMsFilter(ms){
+  msFilter = (msFilter===ms) ? null : ms;
+  renderAll();
+}
+
+function clearMsFilter(){
+  msFilter=null;renderAll();
+}
+
+function updateFilterBadge(){
+  const badge=document.getElementById('filter-badge');
+  if(msFilter===null){badge.style.display='none';return;}
+  badge.style.display='flex';
+  document.getElementById('filter-badge-name').textContent=msFilter;
+  // Đếm căn đạt milestone này
+  const filterIdx=mi(msFilter);
+  const matched=Object.values(SD).filter(s=>s&&s.ms&&mi(s.ms)>=filterIdx&&filterIdx>=0).length;
+  const tot=Object.keys(COORDS).length;
+  const pct=tot>0?Math.round(matched/tot*100):0;
+  document.getElementById('filter-badge-stat').textContent=`${matched}/${tot} căn · ${pct}%`;
 }
 function handleClick(e,id){
   if(e.ctrlKey||e.metaKey){if(multiSel.has(id))multiSel.delete(id);else multiSel.add(id);sel=null;updateSelUI();}
@@ -1638,6 +1820,212 @@ async function submitProgress(){
   }finally{
     btn.disabled=false;btn.textContent='✓ Ghi lên Sheet';
   }
+}
+
+// ════════════════════════════════════════
+// WEEKLY SNAPSHOT
+// ════════════════════════════════════════
+const WEEKLY_SHEET='WeeklySnapshot';
+let weeklyChart=null, mobWeeklyChart=null;
+
+function getWeekLabel(date){
+  const d=new Date(date);
+  // ISO week number
+  const jan1=new Date(d.getFullYear(),0,1);
+  const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+  return `W${wk}/${d.getFullYear().toString().slice(2)}`;
+}
+
+function openWeekly(){
+  if(!CUR){toast('Chưa chọn dự án','err');return;}
+  document.getElementById('weekly-panel').classList.add('show');
+  document.getElementById('weekly-proj-sub').textContent=CUR.name;
+  // Load saved day preference
+  const savedDay=localStorage.getItem('wc_weekly_day')||'0';
+  document.getElementById('weekly-day-sel').value=savedDay;
+  updateWeeklyDayLabel();
+  loadWeeklyData();
+}
+
+function closeWeekly(){document.getElementById('weekly-panel').classList.remove('show');}
+
+document.getElementById('weekly-day-sel').addEventListener('change',function(){
+  localStorage.setItem('wc_weekly_day',this.value);
+  updateWeeklyDayLabel();
+  checkWeeklyRemind();
+});
+
+function updateWeeklyDayLabel(){
+  const days=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+  const v=parseInt(document.getElementById('weekly-day-sel').value);
+  document.getElementById('weekly-day-label').textContent=days[v];
+}
+
+function checkWeeklyRemind(){
+  if(!CUR)return;
+  const savedDay=parseInt(localStorage.getItem('wc_weekly_day')||'0');
+  const today=new Date().getDay();
+  const remind=document.getElementById('weekly-remind');
+  if(remind)remind.style.display=(today===savedDay)?'':'none';
+}
+
+async function loadWeeklyData(){
+  if(!CUR)return;
+  try{
+    const data=await gapi(CUR.sheetId,`${WEEKLY_SHEET}!A:I`);
+    const rows=(data.values||[]).filter(r=>r[0]&&r[0]!=='Week');
+    renderWeeklyTable(rows);
+    renderWeeklyChart(rows);
+    renderMobWeeklyChart(rows);
+    // Check last snapshot
+    if(rows.length){
+      const last=rows[rows.length-1];
+      document.getElementById('weekly-last-txt').textContent=`Lần chốt gần nhất: ${last[0]} · ${last[1]}`;
+    } else {
+      document.getElementById('weekly-last-txt').textContent='Chưa có dữ liệu chốt tuần';
+    }
+    checkWeeklyRemind();
+  }catch(e){
+    document.getElementById('weekly-last-txt').textContent='Chưa có tab WeeklySnapshot trong Sheet';
+  }
+}
+
+function renderWeeklyTable(rows){
+  const tbody=document.getElementById('weekly-tbody');
+  tbody.innerHTML='';
+  const display=rows.slice(-12).reverse();
+  display.forEach((r,idx)=>{
+    const prev=display[idx+1];
+    const btDelta=prev?(parseFloat(r[2]||0)-parseFloat(prev[2]||0)).toFixed(1):'—';
+    const ctDelta=prev?(parseFloat(r[3]||0)-parseFloat(prev[3]||0)).toFixed(3):'—';
+    const cfDelta=prev?(parseFloat(r[4]||0)-parseFloat(prev[4]||0)).toFixed(1):'—';
+    tbody.innerHTML+=`<tr>
+      <td>${r[0]||''}</td><td>${r[1]||''}</td>
+      <td>${parseFloat(r[2]||0).toLocaleString('vi-VN',{maximumFractionDigits:1})}</td>
+      <td>${parseFloat(r[3]||0).toLocaleString('vi-VN',{maximumFractionDigits:3})}</td>
+      <td>${parseFloat(r[4]||0).toLocaleString('vi-VN',{maximumFractionDigits:1})}</td>
+      <td>${r[5]||0}</td>
+      <td style="color:#60a5fa">${btDelta}</td>
+      <td style="color:#34d399">${ctDelta}</td>
+      <td style="color:#fbbf24">${cfDelta}</td>
+    </tr>`;
+  });
+}
+
+function renderWeeklyChart(rows){
+  const ctx=document.getElementById('weekly-chart').getContext('2d');
+  if(weeklyChart)weeklyChart.destroy();
+  const display=rows.slice(-10);
+  const labels=display.map(r=>r[0]||'');
+  const btCum=display.map(r=>parseFloat(r[2]||0));
+  const btDelta=display.map((r,i)=>i===0?0:parseFloat(r[2]||0)-parseFloat(display[i-1][2]||0));
+  weeklyChart=new Chart(ctx,{
+    data:{
+      labels,
+      datasets:[
+        {type:'bar',label:'BT tuần (m³)',data:btDelta,backgroundColor:'rgba(96,165,250,.5)',borderColor:'#60a5fa',borderWidth:1,yAxisID:'y1'},
+        {type:'line',label:'BT tích lũy (m³)',data:btCum,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.1)',tension:.3,pointRadius:3,fill:true,yAxisID:'y2'},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},
+        y1:{type:'linear',position:'left',ticks:{color:'#60a5fa',font:{size:9}},grid:{color:'#1e293b'},title:{display:true,text:'Tuần (m³)',color:'#60a5fa',font:{size:8}}},
+        y2:{type:'linear',position:'right',ticks:{color:'#93c5fd',font:{size:9}},grid:{drawOnChartArea:false},title:{display:true,text:'Tích lũy (m³)',color:'#93c5fd',font:{size:8}}}
+      }
+    }
+  });
+}
+
+async function chotTuan(){
+  if(!authToken){toast('Cần đăng nhập để chốt tuần','err');return;}
+  if(!CUR){toast('Chưa chọn dự án','err');return;}
+  const btn=document.getElementById('weekly-chot-btn');
+  const now=new Date();
+  const wkLabel=getWeekLabel(now);
+  const dateStr=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+  // Kiểm tra đã chốt tuần này chưa
+  try{
+    const exist=await gapi(CUR.sheetId,`${WEEKLY_SHEET}!A:A`);
+    const rows=exist.values||[];
+    if(rows.find(r=>r[0]===wkLabel)){
+      if(!confirm(`Tuần ${wkLabel} đã chốt rồi. Bạn muốn ghi đè không?`))return;
+    }
+  }catch(e){}
+  // Tính số liệu hiện tại từ KL
+  let cd=0,cp=0,rd=0,rp=0,fd=0,fp=0,act=0;
+  Object.keys(COORDS).forEach(id=>{
+    const k=KL[id],s=SD[id];
+    if(k){cd+=k.cd;rd+=k.rd;fd+=k.fd;cp+=k.cp;rp+=k.rp;fp+=k.fp;}
+    if(s&&s.ms&&mi(s.ms)>=0&&mi(s.ms)<MS.length-1)act++;
+  });
+  btn.disabled=true;btn.textContent='Đang ghi...';
+  try{
+    await gapiWrite(CUR.sheetId,`${WEEKLY_SHEET}!A:I`,[[wkLabel,dateStr,cd.toFixed(1),rd.toFixed(3),fd.toFixed(1),act,cp.toFixed(1),rp.toFixed(3),fp.toFixed(1)]]);
+    toast(`✓ Đã chốt ${wkLabel} — BT:${cd.toFixed(0)}m³ CT:${rd.toFixed(1)}t CF:${fd.toFixed(0)}m²`);
+    await loadWeeklyData();
+  }catch(e){toast('Lỗi ghi Sheet: '+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent='✓ Chốt tuần này';}
+}
+
+// ════════════════════════════════════════
+// MOBILE OVERVIEW
+// ════════════════════════════════════════
+function renderMobileOverview(){
+  if(!CUR)return;
+  document.getElementById('mob-proj-name').textContent=CUR.name;
+  document.getElementById('mob-upd-date').textContent=new Date().toLocaleDateString('vi-VN');
+  // Milestone progress
+  const msCounts={};
+  Object.values(SD).forEach(s=>{if(s&&s.ms)msCounts[s.ms]=(msCounts[s.ms]||0)+1;});
+  const tot=Object.keys(COORDS).length;
+  const mobMsList=document.getElementById('mob-ms-list');
+  mobMsList.innerHTML='';
+  const used=new Set(Object.values(SD).map(s=>s&&s.ms).filter(Boolean));
+  MS.forEach((m,i)=>{
+    if(!used.has(m))return;
+    const cnt=msCounts[m]||0;
+    const pct=tot>0?Math.round(cnt/tot*100):0;
+    mobMsList.innerHTML+=`<div class="mob-ms-row">
+      <div class="mob-ms-dot" style="background:${MC[i]}"></div>
+      <div class="mob-ms-name">${m}</div>
+      <div class="mob-ms-bar-wrap"><div class="mob-ms-bar-fill" style="width:${pct}%;background:${MC[i]}"></div></div>
+      <div class="mob-ms-count">${cnt} căn</div>
+      <div class="mob-ms-pct">${pct}%</div>
+    </div>`;
+  });
+  // KL tổng
+  let cd=0,cp=0,rd=0,rp=0,fd=0,fp=0;
+  Object.keys(COORDS).forEach(id=>{const k=KL[id];if(k){cd+=k.cd;cp+=k.cp;rd+=k.rd;rp+=k.rp;fd+=k.fd;fp+=k.fp;}});
+  const pc=pctN(cd,cp),pr=pctN(rd,rp),pf=pctN(fd,fp);
+  document.getElementById('mob-kl-list').innerHTML=`
+    <div class="mob-kl-row"><div class="mob-kl-label" style="color:#60a5fa">BT</div><div class="mob-kl-bar-wrap"><div class="mob-kl-bar-fill" style="width:${pc}%;background:#60a5fa"></div></div><div class="mob-kl-nums">${fmt(cd)}/${fmt(cp)} m³</div><div class="mob-kl-pct" style="color:#60a5fa">${pc}%</div></div>
+    <div class="mob-kl-row"><div class="mob-kl-label" style="color:#34d399">CT</div><div class="mob-kl-bar-wrap"><div class="mob-kl-bar-fill" style="width:${pr}%;background:#34d399"></div></div><div class="mob-kl-nums">${fmt(rd)}/${fmt(rp)} tấn</div><div class="mob-kl-pct" style="color:#34d399">${pr}%</div></div>
+    <div class="mob-kl-row"><div class="mob-kl-label" style="color:#fbbf24">CF</div><div class="mob-kl-bar-wrap"><div class="mob-kl-bar-fill" style="width:${pf}%;background:#fbbf24"></div></div><div class="mob-kl-nums">${fmt(fd)}/${fmt(fp)} m²</div><div class="mob-kl-pct" style="color:#fbbf24">${pf}%</div></div>`;
+}
+
+async function renderMobWeeklyChart(rows){
+  const ctx=document.getElementById('mob-weekly-chart');
+  if(!ctx)return;
+  if(mobWeeklyChart)mobWeeklyChart.destroy();
+  if(!rows||!rows.length){ctx.getContext('2d').clearRect(0,0,ctx.width,ctx.height);return;}
+  const display=rows.slice(-8);
+  const labels=display.map(r=>r[0]||'');
+  const btCum=display.map(r=>parseFloat(r[2]||0));
+  const btDelta=display.map((r,i)=>i===0?0:parseFloat(r[2]||0)-parseFloat(display[i-1][2]||0));
+  mobWeeklyChart=new Chart(ctx.getContext('2d'),{
+    data:{labels,datasets:[
+      {type:'bar',label:'BT tuần',data:btDelta,backgroundColor:'rgba(96,165,250,.5)',borderColor:'#60a5fa',borderWidth:1,yAxisID:'y1'},
+      {type:'line',label:'Tích lũy',data:btCum,borderColor:'#60a5fa',tension:.3,pointRadius:2,fill:false,yAxisID:'y2'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:8}}}},
+      scales:{x:{ticks:{color:'#64748b',font:{size:8}},grid:{color:'#1e293b'}},
+        y1:{type:'linear',position:'left',ticks:{color:'#60a5fa',font:{size:8}},grid:{color:'#1e293b'}},
+        y2:{type:'linear',position:'right',ticks:{color:'#93c5fd',font:{size:8}},grid:{drawOnChartArea:false}}
+      }}
+  });
 }
 
 // ════════════════════════════════════════
