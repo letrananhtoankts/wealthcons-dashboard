@@ -185,9 +185,12 @@ header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;displ
 .bs-save-btn:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
 .bs-cancel-btn{font-family:inherit;font-size:14px;padding:12px 20px;border-radius:12px;border:1px solid #1e293b;background:transparent;color:#64748b;cursor:pointer}
 .bs-viewer-note{padding:14px 18px;text-align:center;font-size:12px;color:#475569}
-  /* Ẩn desktop tabs trên mobile */
+
+/* MOBILE ONLY — màn hình ≤767px */
+@media (max-width:767px){
+  /* Ẩn desktop tabs */
   #htab-editor,#htab-admin{display:none!important}
-  /* Ẩn tab map desktop, hiện mobile overview */
+  /* Ẩn tab-map desktop, hiện mobile overview */
   #tab-map{display:none!important}
   #tab-mobile-overview{display:flex!important}
   /* Header compact */
@@ -195,6 +198,8 @@ header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;displ
   .h-tabs{display:none}
   .h-auth-mini,.lupd,.rbtn{display:none!important}
 }
+
+/* Tab mobile overview: mặc định ẩn, chỉ hiện khi media query kích hoạt */
 #tab-mobile-overview{display:none;flex-direction:column;flex:1;overflow-y:auto;background:#0a0f1a;padding:12px}
 .mob-section{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px;margin-bottom:12px}
 .mob-sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:10px}
