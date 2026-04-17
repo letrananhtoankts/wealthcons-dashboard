@@ -157,8 +157,34 @@ header{background:#0f172a;border-bottom:1px solid #1e293b;padding:5px 14px;displ
 .week-badge{font-size:9px;background:rgba(251,191,36,.15);color:#fbbf24;border-radius:8px;padding:2px 8px;font-weight:700}
 .week-remind{font-size:10px;color:#f59e0b;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:4px 12px;margin-left:6px}
 
-/* MOBILE OVERVIEW */
-@media (max-width:767px){
+/* MOBILE MAP */
+.mob-map-section{background:#111827;border:1px solid #1e293b;border-radius:12px;margin-bottom:12px;overflow:hidden;position:relative}
+.mob-map-wrap{width:100%;height:260px;overflow:hidden;position:relative;touch-action:none;background:#1e293b}
+.mob-map-inner{width:100%;height:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.mob-map-svg-wrap{display:inline-block;transform-origin:top left;line-height:0}
+.mob-map-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.85);border-radius:12px;padding:3px 10px;font-size:9px;color:#64748b;pointer-events:none;white-space:nowrap}
+.mob-map-zc{position:absolute;bottom:8px;right:8px;display:flex;flex-direction:column;gap:3px;z-index:5}
+.mob-zb{width:28px;height:28px;background:#1e293b;border:1px solid #334155;border-radius:6px;font-size:14px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.mob-zb:hover{background:#334155;color:#f1f5f9}
+
+/* BOTTOM SHEET */
+.bottom-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;opacity:0;transition:opacity .25s}
+.bottom-sheet-overlay.show{display:block;opacity:1}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#111827;border-top:1px solid #1e293b;border-radius:20px 20px 0 0;z-index:301;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:env(safe-area-inset-bottom)}
+.bottom-sheet.show{transform:translateY(0)}
+.bs-handle{width:36px;height:4px;background:#334155;border-radius:2px;margin:10px auto 14px}
+.bs-villa-id{font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:2px;padding:0 18px}
+.bs-villa-sub{font-size:11px;color:#475569;padding:0 18px;margin-bottom:4px}
+.bs-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:16px;font-size:10px;font-weight:600;margin:0 18px 14px;margin-top:4px}
+.bs-section{padding:0 18px 14px;border-top:1px solid #1e293b;margin-top:4px;padding-top:14px}
+.bs-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#475569;margin-bottom:8px}
+.bs-ms-sel{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.bs-date-inp{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:14px}
+.bs-btns{display:flex;gap:8px;padding:0 18px 20px}
+.bs-save-btn{flex:1;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:var(--gold);color:#0f172a;cursor:pointer}
+.bs-save-btn:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
+.bs-cancel-btn{font-family:inherit;font-size:14px;padding:12px 20px;border-radius:12px;border:1px solid #1e293b;background:transparent;color:#64748b;cursor:pointer}
+.bs-viewer-note{padding:14px 18px;text-align:center;font-size:12px;color:#475569}
   /* Ẩn desktop tabs trên mobile */
   #htab-editor,#htab-admin{display:none!important}
   /* Ẩn tab map desktop, hiện mobile overview */
@@ -467,6 +493,28 @@ option{background:#0f172a}
       <div class="mob-proj-name" id="mob-proj-name">—</div>
       <div class="mob-proj-date">Cập nhật: <span id="mob-upd-date">—</span></div>
     </div>
+
+    <!-- Mobile Map -->
+    <div class="mob-map-section">
+      <div class="mob-map-wrap" id="mob-map-wrap">
+        <div class="mob-map-inner" id="mob-map-inner">
+          <div class="mob-map-svg-wrap" id="mob-map-svg-wrap">
+            <svg id="mob-map-svg" xmlns="http://www.w3.org/2000/svg">
+              <rect id="mob-map-bg" fill="#1e293b"/>
+              <image id="mob-map-img" preserveAspectRatio="xMidYMid meet"/>
+              <g id="mob-pg"></g>
+            </svg>
+          </div>
+        </div>
+        <div class="mob-map-hint" id="mob-map-hint">👆 Chạm căn để cập nhật tiến độ</div>
+        <div class="mob-map-zc">
+          <div class="mob-zb" onclick="mobZoom(1.3)">+</div>
+          <div class="mob-zb" onclick="mobZoom(0.77)">−</div>
+          <div class="mob-zb" onclick="mobFitZoom()" style="font-size:9px">FIT</div>
+        </div>
+      </div>
+    </div>
+
     <div class="mob-section">
       <div class="mob-sec-title">Tiến độ Milestone</div>
       <div id="mob-ms-list"></div>
@@ -478,6 +526,32 @@ option{background:#0f172a}
     <div class="mob-section">
       <div class="mob-sec-title">Sản lượng tuần</div>
       <div class="mob-chart-wrap"><canvas id="mob-weekly-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM SHEET: Cập nhật tiến độ mobile -->
+  <div class="bottom-sheet-overlay" id="bs-overlay" onclick="closeBotSheet()"></div>
+  <div class="bottom-sheet" id="bottom-sheet">
+    <div class="bs-handle"></div>
+    <div class="bs-villa-id" id="bs-villa-id">—</div>
+    <div class="bs-villa-sub" id="bs-villa-sub">—</div>
+    <div class="bs-badge" id="bs-badge"><span id="bs-badge-txt">—</span></div>
+    <!-- Editor/Admin: form cập nhật -->
+    <div id="bs-form-wrap">
+      <div class="bs-section">
+        <div class="bs-label">Mốc thi công mới</div>
+        <select class="bs-ms-sel" id="bs-ms-sel"></select>
+        <div class="bs-label">Ngày cập nhật</div>
+        <input type="date" class="bs-date-inp" id="bs-date-inp">
+      </div>
+      <div class="bs-btns">
+        <button class="bs-cancel-btn" onclick="closeBotSheet()">Hủy</button>
+        <button class="bs-save-btn" id="bs-save-btn" onclick="submitMobProgress()">✓ Lưu tiến độ</button>
+      </div>
+    </div>
+    <!-- Viewer: chỉ xem -->
+    <div class="bs-viewer-note" id="bs-viewer-note" style="display:none">
+      🔒 Bạn cần quyền Editor để cập nhật tiến độ
     </div>
   </div>
 
@@ -1985,6 +2059,8 @@ function renderMobileOverview(){
   if(!CUR)return;
   document.getElementById('mob-proj-name').textContent=CUR.name;
   document.getElementById('mob-upd-date').textContent=new Date().toLocaleDateString('vi-VN');
+  // Setup mobile map
+  mobSetupMap();
   const tot=Object.keys(COORDS).length;
   const mobMsList=document.getElementById('mob-ms-list');
   mobMsList.innerHTML='';
@@ -2036,6 +2112,154 @@ async function renderMobWeeklyChart(rows){
         y2:{type:'linear',position:'right',ticks:{color:'#93c5fd',font:{size:8}},grid:{drawOnChartArea:false}}
       }}
   });
+}
+
+// ════════════════════════════════════════
+// MOBILE MAP
+// ════════════════════════════════════════
+let mobZl=0.3, mobSelId=null;
+
+function mobSetupMap(){
+  if(!CUR)return;
+  const w=CUR.imgW||2000, h=CUR.imgH||1760;
+  const svg=document.getElementById('mob-map-svg');
+  svg.setAttribute('width',w);svg.setAttribute('height',h);svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  document.getElementById('mob-map-bg').setAttribute('width',w);
+  document.getElementById('mob-map-bg').setAttribute('height',h);
+  if(CUR.imageUrl){
+    const img=document.getElementById('mob-map-img');
+    img.setAttribute('href',CUR.imageUrl);
+    img.setAttribute('width',w);img.setAttribute('height',h);
+  }
+  mobFitZoom();
+  mobRenderMap();
+  // Touch pinch zoom + pan
+  const inner=document.getElementById('mob-map-inner');
+  let t0=null,d0=0,zl0=0;
+  inner.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      t0=e.touches;
+      d0=Math.hypot(t0[1].clientX-t0[0].clientX,t0[1].clientY-t0[0].clientY);
+      zl0=mobZl;
+      e.preventDefault();
+    }
+  },{passive:false});
+  inner.addEventListener('touchmove',e=>{
+    if(e.touches.length===2&&t0){
+      e.preventDefault();
+      const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
+      mobZl=Math.min(4,Math.max(0.1,zl0*(d/d0)));
+      mobApplyZoom();
+    }
+  },{passive:false});
+  inner.addEventListener('touchend',()=>{t0=null;});
+}
+
+function mobFitZoom(){
+  const wrap=document.getElementById('mob-map-wrap');
+  const w=CUR?CUR.imgW||2000:2000, h=CUR?CUR.imgH||1760:1760;
+  mobZl=Math.min(wrap.clientWidth/w, wrap.clientHeight/h)*0.95;
+  mobApplyZoom();
+}
+function mobZoom(f){mobZl=Math.min(4,Math.max(0.1,mobZl*f));mobApplyZoom();}
+function mobApplyZoom(){document.getElementById('mob-map-svg-wrap').style.transform=`scale(${mobZl})`;}
+
+function mobRenderMap(){
+  const g=document.getElementById('mob-pg');g.innerHTML='';
+  Object.entries(COORDS).forEach(([id,pts])=>{
+    const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points',pts);
+    poly.setAttribute('fill',gc(id));
+    poly.setAttribute('opacity', mobSelId===id?'1':'0.82');
+    if(mobSelId===id){poly.setAttribute('stroke','#fff');poly.setAttribute('stroke-width','4');}
+    poly.addEventListener('click',()=>mobClickUnit(id));
+    g.appendChild(poly);
+    const pa=pts.split(' ').map(p=>p.split(',').map(Number));
+    const cx=pa.reduce((a,p)=>a+p[0],0)/pa.length,cy=pa.reduce((a,p)=>a+p[1],0)/pa.length;
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x',cx);lbl.setAttribute('y',cy);lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('dominant-baseline','central');lbl.setAttribute('font-size','10');
+    lbl.setAttribute('font-weight','700');lbl.setAttribute('fill','#fff');lbl.setAttribute('pointer-events','none');
+    lbl.textContent=id;g.appendChild(lbl);
+  });
+}
+
+function mobClickUnit(id){
+  mobSelId=id;
+  mobRenderMap();
+  openBotSheet(id);
+}
+
+// ════════════════════════════════════════
+// BOTTOM SHEET
+// ════════════════════════════════════════
+function openBotSheet(id){
+  const s=SD[id]||{},vi=VI[id]||{};
+  const msIdx=s.ms?mi(s.ms):-1;
+  document.getElementById('bs-villa-id').textContent=id;
+  document.getElementById('bs-villa-sub').textContent=vi.sub||vi.type||'—';
+  // Badge trạng thái
+  const badge=document.getElementById('bs-badge');
+  const badgeTxt=document.getElementById('bs-badge-txt');
+  if(!s.ms){badge.style.cssText='background:rgba(255,255,255,.08);color:#94a3b8;display:inline-flex;';badgeTxt.textContent='Chưa bắt đầu';}
+  else if(msIdx===MS.length-1){badge.style.cssText='background:rgba(52,211,153,.15);color:#34d399;display:inline-flex;';badgeTxt.textContent='✓ Hoàn thành';}
+  else{badge.style.cssText='background:rgba(200,169,110,.2);color:var(--gold);display:inline-flex;';badgeTxt.textContent='⚙ Đang thi công · '+s.ms;}
+
+  const formWrap=document.getElementById('bs-form-wrap');
+  const viewerNote=document.getElementById('bs-viewer-note');
+
+  if(canEdit()){
+    formWrap.style.display='';
+    viewerNote.style.display='none';
+    // Populate milestone dropdown
+    const sel=document.getElementById('bs-ms-sel');
+    sel.innerHTML=MS.map(m=>`<option value="${m}">${m}</option>`).join('');
+    // Default: mốc tiếp theo
+    if(s.ms&&msIdx>=0&&msIdx<MS.length-1) sel.selectedIndex=msIdx+1;
+    else if(msIdx>=0) sel.selectedIndex=msIdx;
+    // Set today date
+    const now=new Date();
+    document.getElementById('bs-date-inp').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  } else {
+    formWrap.style.display='none';
+    viewerNote.style.display='';
+  }
+
+  document.getElementById('bs-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('bottom-sheet').classList.add('show'),10);
+}
+
+function closeBotSheet(){
+  document.getElementById('bottom-sheet').classList.remove('show');
+  document.getElementById('bs-overlay').classList.remove('show');
+  setTimeout(()=>{mobSelId=null;mobRenderMap();},300);
+}
+
+async function submitMobProgress(){
+  if(!mobSelId||!CUR){toast('Chưa chọn căn','err');return;}
+  if(!authToken){toast('Cần đăng nhập','err');return;}
+  const milestone=document.getElementById('bs-ms-sel').value;
+  const dateVal=document.getElementById('bs-date-inp').value;
+  if(!milestone||!dateVal){toast('Chọn mốc và ngày','err');return;}
+  const[yr,mo,dy]=dateVal.split('-');
+  const dateStr=`${dy}/${mo}/${yr}`;
+  const btn=document.getElementById('bs-save-btn');
+  btn.disabled=true;btn.textContent='Đang lưu...';
+  try{
+    await gapiWrite(CUR.sheetId,'MasterStatus!A:C',[[mobSelId,milestone,dateStr]]);
+    // Cập nhật local state ngay
+    SD[mobSelId]={ms:milestone,date:dateStr};
+    closeBotSheet();
+    toast(`✓ ${mobSelId} → ${milestone}`);
+    // Refresh map + stats
+    mobRenderMap();
+    renderMobileOverview();
+    renderAll(); // cập nhật desktop map nếu đang mở
+    updateProjSummary();
+    // Fetch lại sau 1.5s
+    setTimeout(()=>loadProjectData(),1500);
+  }catch(e){toast('Lỗi: '+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent='✓ Lưu tiến độ';}
 }
 
 // ════════════════════════════════════════
