@@ -841,6 +841,27 @@ function gapiWrite(sheetId,range,values){
     body:JSON.stringify({values})
   }).then(r=>r.json());
 }
+// Ghi đè milestone cho 1 căn: đọc MasterStatus → xóa dòng cũ của căn đó → ghi dòng mới vào cuối
+// Tránh tình trạng append nhiều dòng gây sai màu
+async function gapiWriteStatus(sheetId,villaId,milestone,dateStr){
+  if(!authToken) throw new Error('Chưa đăng nhập');
+  // 1. Đọc toàn bộ MasterStatus
+  const existing=await gapi(sheetId,'MasterStatus!A:C');
+  const rows=existing.values||[];
+  // 2. Lọc bỏ tất cả dòng của villaId này (có thể có nhiều dòng do append cũ)
+  const filtered=rows.filter((r,i)=>i===0||r[0]!==villaId);
+  // 3. Thêm dòng mới vào cuối
+  filtered.push([villaId,milestone,dateStr]);
+  // 4. Clear sheet rồi PUT lại toàn bộ
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/MasterStatus!A1:C10000:clear`,{
+    method:'POST',headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}
+  });
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/MasterStatus!A1:C${filtered.length}?valueInputOption=RAW`,{
+    method:'PUT',
+    headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+    body:JSON.stringify({values:filtered})
+  });
+}
 function driveDirect(url){
   if(!url)return'';
   const m=url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -867,7 +888,11 @@ function initAuth(){
     client_id:CLIENT_ID,
     scope:SCOPES,
     callback:(resp)=>{
-      if(resp.error){toast('Đăng nhập thất bại: '+resp.error,'err');return;}
+      if(resp.error){
+        // Nếu silent re-auth thất bại (user chưa grant hoặc cookie bị xóa) → không toast lỗi, chỉ reset token
+        if(resp.error==='interaction_required'||resp.error==='consent_required'){authToken=null;return;}
+        toast('Đăng nhập thất bại: '+resp.error,'err');return;
+      }
       authToken=resp.access_token;
       // Get user info then check whitelist
       fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+authToken}})
@@ -880,10 +905,21 @@ function initAuth(){
             given_name:u.given_name,role:userRole
           }));
           updateAuthUI();
-          toast('Đã đăng nhập: '+u.name+' ('+userRole+')');
+          // Không toast nếu là silent re-auth (authUser đã có từ localStorage)
+          if(!_silentReauth) toast('Đã đăng nhập: '+u.name+' ('+userRole+')');
+          _silentReauth=false;
         });
     }
   });
+}
+
+// Silent re-auth: lấy lại access token không cần popup nếu user đã đăng nhập trước đó
+let _silentReauth=false;
+function trySilentReauth(email){
+  if(!tokenClient)return;
+  _silentReauth=true;
+  // hint=email giúp Google biết account nào, prompt='' để không hiện popup nếu cookie còn hợp lệ
+  tokenClient.requestAccessToken({hint:email,prompt:''});
 }
 
 function signIn(){
@@ -950,6 +986,8 @@ window.addEventListener('load',()=>{
       const s = JSON.parse(saved);
       authUser = {email:s.email,name:s.name,picture:s.picture,given_name:s.given_name};
       userRole = s.role||'viewer';
+      // Hiện UI ngay với thông tin đã lưu (avatar, tên) trong khi verify lại
+      updateAuthUI();
       // Verify lại role từ Whitelist Sheet (phòng trường hợp role thay đổi)
       checkWhitelist(s.email).then(()=>{
         // Cập nhật lại localStorage với role mới nhất
@@ -959,9 +997,16 @@ window.addEventListener('load',()=>{
         }));
         updateAuthUI();
       });
-    }catch(e){ localStorage.removeItem('wc_session'); }
+      // Khởi tạo Google Auth rồi silent re-auth để lấy lại access token tự động
+      setTimeout(()=>{
+        initAuth();
+        // Chờ tokenClient sẵn sàng rồi mới silent re-auth
+        setTimeout(()=>trySilentReauth(s.email), 800);
+      }, 800);
+    }catch(e){ localStorage.removeItem('wc_session'); setTimeout(initAuth,1000); }
+  } else {
+    setTimeout(initAuth,1000);
   }
-  setTimeout(initAuth,1000);
 });
 
 // ════════════════════════════════════════
@@ -1886,7 +1931,7 @@ async function submitProgress(){
   const btn=event.target;
   btn.disabled=true;btn.textContent='Đang ghi...';
   try{
-    await gapiWrite(CUR.sheetId,'MasterStatus!A:C',[[sel,milestone,dateStr]]);
+    await gapiWriteStatus(CUR.sheetId,sel,milestone,dateStr);
     toast(`✓ Đã cập nhật ${sel} → ${milestone}`);
     cancelProgress();
     // Update local state ngay + fetch lại KL từ Sheet
@@ -2266,7 +2311,7 @@ async function submitMobProgress(){
   const btn=document.getElementById('bs-save-btn');
   btn.disabled=true;btn.textContent='Đang lưu...';
   try{
-    await gapiWrite(CUR.sheetId,'MasterStatus!A:C',[[mobSelId,milestone,dateStr]]);
+    await gapiWriteStatus(CUR.sheetId,mobSelId,milestone,dateStr);
     // Cập nhật local state ngay
     SD[mobSelId]={ms:milestone,date:dateStr};
     closeBotSheet();
