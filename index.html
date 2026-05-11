@@ -394,6 +394,41 @@ option{background:#0f172a}
 .admin-lock h3{font-size:14px;font-weight:600;color:#475569}
 .admin-lock p{font-size:11px;line-height:1.7}
 
+/* ── PHOTO EVIDENCE ── */
+.photo-section{padding:10px 12px;border-top:1px solid var(--border)}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.photo-card{position:relative;border-radius:8px;overflow:hidden;background:#f1f5f9;cursor:pointer;border:1px solid var(--border);aspect-ratio:4/3}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .2s}
+.photo-card:hover img{opacity:.85}
+.photo-ms-badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.7);color:#fff;font-size:7px;font-weight:700;padding:2px 6px;border-radius:6px;letter-spacing:.04em}
+.photo-time{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:7px;color:rgba(255,255,255,.85);background:linear-gradient(transparent,rgba(0,0,0,.5));padding:6px 4px 3px}
+.photo-empty{grid-column:1/-1;text-align:center;padding:14px;color:#94a3b8;font-size:10px;background:#f8fafc;border-radius:8px;border:1px dashed #e2e8f0}
+.photo-loading{grid-column:1/-1;text-align:center;padding:14px;color:#94a3b8;font-size:10px}
+/* Upload area in form */
+.photo-upload-area{border:2px dashed #334155;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:8px;position:relative}
+.photo-upload-area:hover,.photo-upload-area.drag-over{border-color:var(--gold);background:rgba(200,169,110,.05)}
+.photo-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-preview-wrap{position:relative;margin-bottom:8px}
+.photo-preview-img{width:100%;max-height:140px;object-fit:cover;border-radius:8px;display:block}
+.photo-preview-clr{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.photo-upload-hint{font-size:9px;color:#64748b;margin-top:3px}
+/* Lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;display:none;align-items:center;justify-content:center;flex-direction:column}
+.lightbox.show{display:flex}
+.lightbox img{max-width:92vw;max-height:80vh;object-fit:contain;border-radius:8px}
+.lightbox-meta{color:#94a3b8;font-size:11px;margin-top:10px;text-align:center}
+.lightbox-close{position:absolute;top:16px;right:20px;color:#fff;font-size:24px;cursor:pointer;background:none;border:none;font-family:inherit;line-height:1;opacity:.7}
+.lightbox-close:hover{opacity:1}
+/* Mobile bottom sheet photo */
+.bs-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:0 18px 10px}
+.bs-photo-thumb{aspect-ratio:1;border-radius:8px;overflow:hidden;position:relative;cursor:pointer;background:#1e293b}
+.bs-photo-thumb img{width:100%;height:100%;object-fit:cover}
+.bs-photo-thumb-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);color:#fff;font-size:7px;font-weight:700;text-align:center;padding:3px}
+.bs-photo-empty{padding:10px 18px;font-size:10px;color:#475569;text-align:center}
+/* Upload progress */
+.upload-prog{height:3px;background:#1e293b;border-radius:2px;overflow:hidden;margin-bottom:6px;display:none}
+.upload-prog-fill{height:100%;background:var(--gold);border-radius:2px;width:0%;transition:width .2s}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 20px;font-size:12px;color:#f1f5f9;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;display:flex;align-items:center;gap:8px}
 .toast.show{opacity:1}
@@ -406,6 +441,13 @@ option{background:#0f172a}
 </style>
 </head>
 <body>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-meta" id="lightbox-meta"></div>
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -544,6 +586,10 @@ option{background:#0f172a}
     <div class="bs-villa-id" id="bs-villa-id">—</div>
     <div class="bs-villa-sub" id="bs-villa-sub">—</div>
     <div class="bs-badge" id="bs-badge"><span id="bs-badge-txt">—</span></div>
+    <!-- Photo thumbnails (viewer + editor đều thấy) -->
+    <div id="bs-photo-section">
+      <div class="bs-photo-grid" id="bs-photo-grid"></div>
+    </div>
     <!-- Editor/Admin: form cập nhật -->
     <div id="bs-form-wrap">
       <div class="bs-section">
@@ -551,6 +597,18 @@ option{background:#0f172a}
         <select class="bs-ms-sel" id="bs-ms-sel"></select>
         <div class="bs-label">Ngày cập nhật</div>
         <input type="date" class="bs-date-inp" id="bs-date-inp">
+        <!-- Photo upload mobile -->
+        <div class="bs-label" style="margin-top:4px">📷 Ảnh nghiệm thu <span style="font-size:8px;color:#475569">(bắt buộc)</span></div>
+        <div id="bs-photo-preview-wrap" style="display:none;position:relative;margin-bottom:8px">
+          <img id="bs-photo-preview" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block" src="" alt="">
+          <button onclick="clearMobPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:inherit">✕</button>
+        </div>
+        <div class="photo-upload-area" id="bs-upload-area" style="border-color:#1e293b;background:rgba(255,255,255,.03)">
+          <input type="file" id="bs-photo-input" accept="image/*" capture="environment" onchange="onMobPhotoSelected(this)">
+          <div style="font-size:13px;color:#64748b">📷 Chụp / Chọn ảnh</div>
+          <div style="font-size:10px;color:#334155;margin-top:2px">Tự động nén &amp; lưu Drive</div>
+        </div>
+        <div class="upload-prog" id="bs-upload-prog"><div class="upload-prog-fill" id="bs-upload-fill"></div></div>
       </div>
       <div class="bs-btns">
         <button class="bs-cancel-btn" onclick="closeBotSheet()">Hủy</button>
@@ -635,9 +693,23 @@ option{background:#0f172a}
                 <div style="font-size:8px;color:#64748b;margin-bottom:3px">Mốc thi công</div>
                 <select id="pf-milestone" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;padding:5px 8px;font-size:11px;color:#e2e8f0;font-family:inherit;outline:none"></select>
               </div>
-              <div style="margin-bottom:8px">
+              <div style="margin-bottom:6px">
                 <div style="font-size:8px;color:#64748b;margin-bottom:3px">Ngày cập nhật</div>
                 <input id="pf-date" type="date" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:5px;padding:5px 8px;font-size:11px;color:#e2e8f0;font-family:inherit;outline:none">
+              </div>
+              <!-- Photo upload -->
+              <div style="margin-bottom:6px">
+                <div style="font-size:8px;color:#64748b;margin-bottom:4px">📷 Ảnh nghiệm thu <span style="color:#475569">(bắt buộc)</span></div>
+                <div id="pf-photo-preview-wrap" style="display:none" class="photo-preview-wrap">
+                  <img id="pf-photo-preview" class="photo-preview-img" src="" alt="">
+                  <button class="photo-preview-clr" onclick="clearDesktopPhoto()">✕</button>
+                </div>
+                <div class="photo-upload-area" id="pf-upload-area">
+                  <input type="file" id="pf-photo-input" accept="image/*" onchange="onDesktopPhotoSelected(this)">
+                  <div style="font-size:11px;color:#64748b">📷 Chọn hoặc chụp ảnh</div>
+                  <div style="font-size:9px;color:#334155;margin-top:2px">Tự động nén &amp; upload Drive</div>
+                </div>
+                <div class="upload-prog" id="pf-upload-prog"><div class="upload-prog-fill" id="pf-upload-fill"></div></div>
               </div>
               <div style="display:flex;gap:6px">
                 <button onclick="submitProgress()" style="flex:2;font-family:inherit;font-size:11px;padding:7px;border-radius:6px;cursor:pointer;border:none;background:#10b981;color:#fff;font-weight:600">✓ Ghi lên Sheet</button>
@@ -650,6 +722,13 @@ option{background:#0f172a}
           <div class="ig"><div class="ic"><div class="icl">Loại căn</div><div class="icv" id="ptype">—</div></div><div class="ic"><div class="icl">Diện tích</div><div class="icv" id="parea">—</div></div></div>
           <div class="ps"><div class="sttl">Mốc thi công</div><div id="pms"></div><div class="pbw"><div class="pb2" id="pbar" style="width:0%"></div></div><div class="pp" id="ppct">0%</div></div>
           <div class="kls"><div class="sttl">Khối lượng</div><div class="kl-chart-wrap"><canvas id="kl-chart"></canvas></div><div id="kli"></div></div>
+          <!-- Photo Evidence Section -->
+          <div class="photo-section">
+            <div class="sttl">📷 Ảnh nghiệm thu</div>
+            <div class="photo-grid" id="desktop-photo-grid">
+              <div class="photo-loading">Đang tải...</div>
+            </div>
+          </div>
           <div class="pf" id="pf">—</div>
         </div>
         <div class="mpb" id="mpb">
@@ -808,7 +887,8 @@ option{background:#0f172a}
 const REGISTRY_ID = '1vhwwEt5CD7n_lqRBInCag-75o_MwgpHXqsB-xb2xfOY';
 const API_KEY     = 'AIzaSyA0RIegBVbU_FBU5_kCT9IGNswN0f_1b68';
 const CLIENT_ID   = '775858800222-53qik12lr7slpb8ghctg617nqti9t4l4.apps.googleusercontent.com';
-const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+const SCOPES      = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+const DRIVE_FOLDER_NAME = 'WEALTHCONS_EVIDENCE';
 const AUTO_REFRESH_MIN = 5;
 // MS/MC loaded dynamically from MilestoneConfig Sheet
 let MS = ["Kết cấu Móng","Dầm sàn 1F","Cột 2F","Dầm sàn 2F","Cột 3F","Dầm sàn 3F","Dầm sàn Mái"];
@@ -1142,6 +1222,8 @@ async function loadProjectData(){
       VI[id]={type:row[1]||'—',sub:row[2]||'—',area:row[3]?row[3]+' m²':'—',imageUrl:driveDirect(row[4]||'')};
     });
     setupMapSVG();updateProjSummary();renderMobileOverview();
+    // Load PhotoLog sau (không block map render)
+    loadPhotoLog();
     document.getElementById('lupd').textContent='Cập nhật: '+new Date().toLocaleTimeString('vi-VN');
     document.getElementById('mob-upd-date').textContent=new Date().toLocaleDateString('vi-VN');
   }catch(e){
@@ -1301,6 +1383,8 @@ function showSinglePanel(id){
   klChart=new Chart(ctx,{type:'doughnut',data:{labels:['BT','CT','CF'],datasets:[{data:[pc,100-pc],backgroundColor:['#60a5fa','#1e3a5f'],borderWidth:0},{data:[pr,100-pr],backgroundColor:['#34d399','#14532d'],borderWidth:0},{data:[pf,100-pf],backgroundColor:['#fbbf24','#451a03'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'35%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){const v=[pc,pr,pf];if(c.dataIndex===0)return['Bê tông','Cốt thép','Coppha'][c.datasetIndex]+': '+v[c.datasetIndex]+'%';return null;}}}}}});
   document.getElementById('kli').innerHTML=[{name:'Bê tông',unit:'m³',d:k.cd,t:k.cp,p:pc,color:'#60a5fa'},{name:'Cốt thép',unit:'tấn',d:k.rd,t:k.rp,p:pr,color:'#34d399'},{name:'Coppha',unit:'m²',d:k.fd,t:k.fp,p:pf,color:'#fbbf24'}].map(item=>`<div class="ki"><div class="kh"><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:${item.color};flex-shrink:0"></div><span class="kn">${item.name}</span></div><div class="kstats"><span class="knum">${fmt(item.d)} / ${fmt(item.t)} ${item.unit}</span><span class="kpct-badge" style="background:${pColor(item.p)}22;color:${pColor(item.p)}">${item.p}%</span></div></div><div class="kbw"><div class="kb" style="width:${item.p}%;background:${item.color}"></div></div></div>`).join('');
   document.getElementById('pf').textContent=s.date?'Cập nhật: '+s.date:'Chưa có dữ liệu';
+  // Render photo evidence
+  renderDesktopPhotoGrid(id);
   // Show/hide update button based on role
   const btnUp=document.getElementById('btn-update-progress');
   if(btnUp) btnUp.style.display=canEdit()?'':'none';
@@ -1380,8 +1464,295 @@ function updateProjSummary(){
 })();
 
 // ════════════════════════════════════════
-// ADMIN
+// GOOGLE DRIVE — PHOTO EVIDENCE
 // ════════════════════════════════════════
+
+// Cache folder IDs để không phải tìm lại mỗi lần
+const _folderCache = {};
+
+// Tìm hoặc tạo folder theo tên trong parent
+async function driveGetOrCreateFolder(name, parentId) {
+  const cacheKey = (parentId||'root') + '/' + name;
+  if (_folderCache[cacheKey]) return _folderCache[cacheKey];
+  // Tìm folder đã có
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId||'root'}' in parents and trashed=false`;
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,{
+    headers:{'Authorization':'Bearer '+authToken}
+  }).then(r=>r.json());
+  if (res.files && res.files.length > 0) {
+    _folderCache[cacheKey] = res.files[0].id;
+    return res.files[0].id;
+  }
+  // Tạo mới
+  const created = await fetch('https://www.googleapis.com/drive/v3/files',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+    body:JSON.stringify({name, mimeType:'application/vnd.google-apps.folder', parents: parentId ? [parentId] : []})
+  }).then(r=>r.json());
+  _folderCache[cacheKey] = created.id;
+  return created.id;
+}
+
+// Lấy folder cho 1 căn cụ thể: WEALTHCONS_EVIDENCE / ProjectID / VillaID
+async function driveGetVillaFolder(projectId, villaId) {
+  const rootId  = await driveGetOrCreateFolder(DRIVE_FOLDER_NAME, null);
+  const projId  = await driveGetOrCreateFolder(projectId, rootId);
+  const villaFId = await driveGetOrCreateFolder(villaId, projId);
+  return villaFId;
+}
+
+// Compress ảnh về max 1200px, quality 0.82 → Blob
+function compressImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1200;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.82);
+    };
+    img.src = url;
+  });
+}
+
+// Upload file lên Drive folder, trả về fileId
+async function driveUploadPhoto(blob, fileName, folderId, onProgress) {
+  // Dùng multipart upload
+  const meta = JSON.stringify({name: fileName, parents: [folderId]});
+  const boundary = 'wealthcons_boundary_' + Date.now();
+  const body = [
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n`,
+    `--${boundary}\r\nContent-Type: image/jpeg\r\n\r\n`,
+    blob,
+    `\r\n--${boundary}--`
+  ];
+  // Build ArrayBuffer cho multipart
+  const parts = await Promise.all(body.map(p => p instanceof Blob ? p.arrayBuffer() : new TextEncoder().encode(p).buffer));
+  const totalLen = parts.reduce((a,b)=>a+b.byteLength,0);
+  const merged = new Uint8Array(totalLen);
+  let off = 0;
+  parts.forEach(p=>{ merged.set(new Uint8Array(p),off); off+=p.byteLength; });
+
+  if(onProgress) onProgress(30);
+  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`,{
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer '+authToken,
+      'Content-Type':`multipart/related; boundary=${boundary}`
+    },
+    body: merged.buffer
+  }).then(r=>r.json());
+  if(onProgress) onProgress(80);
+  return res.id;
+}
+
+// Set permission anyone with link → view (để embed thumbnail)
+async function driveSetPublic(fileId) {
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`,{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+    body:JSON.stringify({role:'reader',type:'anyone'})
+  });
+}
+
+// Xóa file Drive theo fileId
+async function driveDeleteFile(fileId) {
+  if(!fileId) return;
+  try {
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`,{
+      method:'DELETE', headers:{'Authorization':'Bearer '+authToken}
+    });
+  } catch(e) { /* ignore nếu file đã xóa */ }
+}
+
+// Thumbnail URL từ fileId
+function driveThumbUrl(fileId, size=400) {
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;
+}
+// Full view URL
+function driveViewUrl(fileId) {
+  return `https://drive.google.com/file/d/${fileId}/view`;
+}
+
+// ════════════════════════════════════════
+// PHOTO STATE (per session)
+// ════════════════════════════════════════
+// PH[villaId][msCode] = {fileId, photoTime}
+let PH = {};
+
+// Load PhotoLog từ Sheet vào PH cho dự án hiện tại
+async function loadPhotoLog() {
+  if(!CUR) return;
+  PH = {};
+  try {
+    const data = await gapi(CUR.sheetId, 'PhotoLog!A:D');
+    const rows = (data.values||[]).slice(1).filter(r=>r[0]);
+    rows.forEach(r => {
+      const [villa, msCode, fileId, photoTime] = r;
+      if(!PH[villa]) PH[villa] = {};
+      PH[villa][msCode] = { fileId: fileId||'', photoTime: photoTime||'' };
+    });
+  } catch(e) { /* PhotoLog chưa có → bỏ qua */ }
+}
+
+// Ghi toàn bộ PH về PhotoLog Sheet (clear + PUT)
+async function savePhotoLog() {
+  if(!CUR||!authToken) return;
+  const rows = [['VillaCode','MilestoneCode','FileId','PhotoTime']];
+  Object.entries(PH).forEach(([villa, msList]) => {
+    Object.entries(msList).forEach(([msCode, v]) => {
+      if(v.fileId) rows.push([villa, msCode, v.fileId, v.photoTime]);
+    });
+  });
+  await fetch(`https://www.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/PhotoLog!A1:D10000:clear`,{
+    method:'POST', headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}
+  }).catch(()=>{});
+  // Dùng Sheets API đúng endpoint
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CUR.sheetId}/values/PhotoLog!A1:D${rows.length}?valueInputOption=RAW`,{
+    method:'PUT',
+    headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},
+    body:JSON.stringify({values:rows})
+  });
+}
+
+// Upload ảnh cho 1 căn+mốc, xóa ảnh cũ nếu có
+async function uploadEvidencePhoto(villaId, msCode, imageFile, onProgress) {
+  if(!authToken) throw new Error('Chưa đăng nhập');
+  // 1. Compress
+  if(onProgress) onProgress(10);
+  const blob = await compressImage(imageFile);
+  // 2. Tìm/tạo folder
+  if(onProgress) onProgress(20);
+  const folderId = await driveGetVillaFolder(CUR.id, villaId);
+  // 3. Xóa file cũ nếu có
+  const oldEntry = PH[villaId] && PH[villaId][msCode];
+  if(oldEntry && oldEntry.fileId) {
+    await driveDeleteFile(oldEntry.fileId);
+  }
+  // 4. Upload file mới, tên = msCode.jpg
+  const fileName = `${msCode}.jpg`;
+  const fileId = await driveUploadPhoto(blob, fileName, folderId, onProgress);
+  // 5. Set public
+  await driveSetPublic(fileId);
+  if(onProgress) onProgress(95);
+  // 6. Cập nhật PH state
+  const now = new Date();
+  const photoTime = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(!PH[villaId]) PH[villaId] = {};
+  PH[villaId][msCode] = { fileId, photoTime };
+  // 7. Ghi PhotoLog
+  await savePhotoLog();
+  if(onProgress) onProgress(100);
+  return { fileId, photoTime };
+}
+
+// ════════════════════════════════════════
+// PHOTO UI — DESKTOP
+// ════════════════════════════════════════
+let _desktopPhotoFile = null;
+
+function onDesktopPhotoSelected(input) {
+  const file = input.files[0];
+  if(!file) return;
+  _desktopPhotoFile = file;
+  const url = URL.createObjectURL(file);
+  document.getElementById('pf-photo-preview').src = url;
+  document.getElementById('pf-photo-preview-wrap').style.display = '';
+  document.getElementById('pf-upload-area').style.display = 'none';
+}
+
+function clearDesktopPhoto() {
+  _desktopPhotoFile = null;
+  document.getElementById('pf-photo-preview').src = '';
+  document.getElementById('pf-photo-preview-wrap').style.display = 'none';
+  document.getElementById('pf-upload-area').style.display = '';
+  document.getElementById('pf-photo-input').value = '';
+}
+
+function renderDesktopPhotoGrid(villaId) {
+  const grid = document.getElementById('desktop-photo-grid');
+  if(!grid) return;
+  const photos = PH[villaId] || {};
+  const hasPhotos = Object.keys(photos).some(k => photos[k] && photos[k].fileId);
+  if(!hasPhotos) {
+    grid.innerHTML = '<div class="photo-empty">Chưa có ảnh nghiệm thu</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  // Hiển thị theo thứ tự milestone
+  MS_CODES.forEach((code, i) => {
+    const entry = photos[code];
+    if(!entry || !entry.fileId) return;
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.innerHTML = `
+      <img src="${driveThumbUrl(entry.fileId,400)}" alt="${MS[i]||code}" loading="lazy">
+      <div class="photo-ms-badge">${MS[i]||code}</div>
+      <div class="photo-time">${entry.photoTime||''}</div>`;
+    card.addEventListener('click', () => openLightbox(driveThumbUrl(entry.fileId,1200), `${villaId} — ${MS[i]||code}`, entry.photoTime));
+    grid.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════
+// PHOTO UI — MOBILE BOTTOM SHEET
+// ════════════════════════════════════════
+let _mobPhotoFile = null;
+
+function onMobPhotoSelected(input) {
+  const file = input.files[0];
+  if(!file) return;
+  _mobPhotoFile = file;
+  const url = URL.createObjectURL(file);
+  document.getElementById('bs-photo-preview').src = url;
+  document.getElementById('bs-photo-preview-wrap').style.display = '';
+  document.getElementById('bs-upload-area').style.display = 'none';
+}
+
+function clearMobPhoto() {
+  _mobPhotoFile = null;
+  document.getElementById('bs-photo-preview').src = '';
+  document.getElementById('bs-photo-preview-wrap').style.display = 'none';
+  document.getElementById('bs-upload-area').style.display = '';
+  document.getElementById('bs-photo-input').value = '';
+}
+
+function renderMobPhotoGrid(villaId) {
+  const grid = document.getElementById('bs-photo-grid');
+  if(!grid) return;
+  const photos = PH[villaId] || {};
+  const entries = MS_CODES.map((code,i)=>({code,name:MS[i]||code,entry:photos[code]})).filter(x=>x.entry&&x.entry.fileId);
+  if(!entries.length) {
+    grid.innerHTML = '<div class="bs-photo-empty">Chưa có ảnh nghiệm thu</div>';
+    return;
+  }
+  grid.innerHTML = entries.map(x=>`
+    <div class="bs-photo-thumb" onclick="openLightbox('${driveThumbUrl(x.entry.fileId,1200)}','${villaId} — ${x.name}','${x.entry.photoTime||''}')">
+      <img src="${driveThumbUrl(x.entry.fileId,300)}" loading="lazy" alt="${x.name}">
+      <div class="bs-photo-thumb-label">${x.name}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════
+// LIGHTBOX
+// ════════════════════════════════════════
+function openLightbox(imgUrl, title, time) {
+  document.getElementById('lightbox-img').src = imgUrl;
+  document.getElementById('lightbox-meta').textContent = title + (time ? '  ·  ' + time : '');
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightbox-img').src = '';
+}
 async function adminLoadProjects(){
   const el=document.getElementById('admin-proj-list');
   el.innerHTML='<div style="padding:12px;text-align:center;color:#334155;font-size:11px"><div class="spin" style="margin:0 auto 6px"></div>Đang tải...</div>';
@@ -1917,6 +2288,7 @@ function toggleProgressForm(){
 function cancelProgress(){
   document.getElementById('progress-form').style.display='none';
   document.getElementById('btn-update-progress').textContent='📝 Cập nhật tiến độ';
+  clearDesktopPhoto();
 }
 
 async function submitProgress(){
@@ -1925,26 +2297,37 @@ async function submitProgress(){
   const milestone=document.getElementById('pf-milestone').value;
   const dateVal=document.getElementById('pf-date').value;
   if(!milestone||!dateVal){toast('Vui lòng chọn mốc và ngày','err');return;}
+  if(!_desktopPhotoFile){toast('Vui lòng chọn ảnh nghiệm thu','err');return;}
   // Format date dd/mm/yyyy
   const[yr,mo,dy]=dateVal.split('-');
   const dateStr=`${dy}/${mo}/${yr}`;
   const btn=event.target;
-  btn.disabled=true;btn.textContent='Đang ghi...';
+  btn.disabled=true;btn.textContent='Đang xử lý...';
+  // Show progress bar
+  const prog=document.getElementById('pf-upload-prog');
+  const fill=document.getElementById('pf-upload-fill');
+  prog.style.display='';
   try{
+    // Tìm milestone code từ tên milestone
+    const msIdx=MS.indexOf(milestone);
+    const msCode=MS_CODES[msIdx]||milestone;
+    // Upload ảnh Drive
+    await uploadEvidencePhoto(sel, msCode, _desktopPhotoFile, pct=>{fill.style.width=pct+'%';});
+    // Ghi MasterStatus
     await gapiWriteStatus(CUR.sheetId,sel,milestone,dateStr);
-    toast(`✓ Đã cập nhật ${sel} → ${milestone}`);
+    toast(`✓ Đã cập nhật ${sel} → ${milestone} + ảnh`);
     cancelProgress();
-    // Update local state ngay + fetch lại KL từ Sheet
+    clearDesktopPhoto();
     SD[sel]={ms:milestone,date:dateStr};
     renderAll();
     showSinglePanel(sel);
     updateProjSummary();
-    // Fetch lại KLTongHop để cập nhật KL mới
     setTimeout(()=>loadProjectData(),1500);
   }catch(e){
-    toast('Lỗi ghi Sheet: '+e.message,'err');
+    toast('Lỗi: '+e.message,'err');
   }finally{
     btn.disabled=false;btn.textContent='✓ Ghi lên Sheet';
+    prog.style.display='none';fill.style.width='0%';
   }
 }
 
@@ -2292,6 +2675,10 @@ function openBotSheet(id){
 
   document.getElementById('bs-overlay').classList.add('show');
   setTimeout(()=>document.getElementById('bottom-sheet').classList.add('show'),10);
+  // Render ảnh đã có
+  renderMobPhotoGrid(id);
+  // Reset photo upload state
+  clearMobPhoto();
 }
 
 function closeBotSheet(){
@@ -2306,25 +2693,35 @@ async function submitMobProgress(){
   const milestone=document.getElementById('bs-ms-sel').value;
   const dateVal=document.getElementById('bs-date-inp').value;
   if(!milestone||!dateVal){toast('Chọn mốc và ngày','err');return;}
+  if(!_mobPhotoFile){toast('Vui lòng chọn ảnh nghiệm thu','err');return;}
   const[yr,mo,dy]=dateVal.split('-');
   const dateStr=`${dy}/${mo}/${yr}`;
   const btn=document.getElementById('bs-save-btn');
-  btn.disabled=true;btn.textContent='Đang lưu...';
+  btn.disabled=true;btn.textContent='Đang xử lý...';
+  const prog=document.getElementById('bs-upload-prog');
+  const fill=document.getElementById('bs-upload-fill');
+  prog.style.display='';
   try{
+    const msIdx=MS.indexOf(milestone);
+    const msCode=MS_CODES[msIdx]||milestone;
+    // Upload ảnh Drive
+    await uploadEvidencePhoto(mobSelId, msCode, _mobPhotoFile, pct=>{fill.style.width=pct+'%';});
+    // Ghi MasterStatus
     await gapiWriteStatus(CUR.sheetId,mobSelId,milestone,dateStr);
     // Cập nhật local state ngay
     SD[mobSelId]={ms:milestone,date:dateStr};
     closeBotSheet();
-    toast(`✓ ${mobSelId} → ${milestone}`);
-    // Refresh map + stats
+    toast(`✓ ${mobSelId} → ${milestone} + ảnh`);
     mobRenderMap();
     renderMobileOverview();
-    renderAll(); // cập nhật desktop map nếu đang mở
+    renderAll();
     updateProjSummary();
-    // Fetch lại sau 1.5s
     setTimeout(()=>loadProjectData(),1500);
   }catch(e){toast('Lỗi: '+e.message,'err');}
-  finally{btn.disabled=false;btn.textContent='✓ Lưu tiến độ';}
+  finally{
+    btn.disabled=false;btn.textContent='✓ Lưu tiến độ';
+    prog.style.display='none';fill.style.width='0%';
+  }
 }
 
 // ════════════════════════════════════════
