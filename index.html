@@ -1353,10 +1353,16 @@ function setupMapSVG(){
 }
 function fitMapZoom(){
   const wrap=document.querySelector('.mp');
-  const ww=wrap.clientWidth-30,wh=wrap.clientHeight-30;
-  zl=Math.min(ww/mapW,wh/mapH,1);applyZoom();
+  // Luôn fit theo chiều NGANG — không co nhỏ hơn mức này
+  const ww=wrap.clientWidth-4;
+  zl=ww/mapW;
+  applyZoom();
 }
-function getMapMinZoom(){const wrap=document.querySelector('.mp');return(wrap.clientWidth-30)/mapW;}
+function getMapMinZoom(){
+  // Min zoom = vừa đúng chiều ngang container, không zoom nhỏ hơn
+  const wrap=document.querySelector('.mp');
+  return(wrap.clientWidth-4)/mapW;
+}
 function zoom(f){const minZl=getMapMinZoom();zl=Math.min(5,Math.max(minZl,zl*f));applyZoom();}
 function resetZoom(){fitMapZoom();}
 function applyZoom(){document.getElementById('mw').style.transform=`scale(${zl})`;}
@@ -1533,7 +1539,7 @@ function updateProjSummary(){
   sc.addEventListener('mousedown',e=>{if(e.ctrlKey||e.metaKey)return;if(['polygon','text'].includes(e.target.tagName))return;drag=true;sx=e.clientX;sy=e.clientY;sl=sc.scrollLeft;st=sc.scrollTop;sc.style.cursor='grabbing';});
   window.addEventListener('mousemove',e=>{if(!drag)return;sc.scrollLeft=sl-(e.clientX-sx);sc.scrollTop=st-(e.clientY-sy);});
   window.addEventListener('mouseup',()=>{drag=false;sc.style.cursor='';});
-  sc.addEventListener('wheel',e=>{e.preventDefault();const r=sc.getBoundingClientRect();const ix=(e.clientX-r.left+sc.scrollLeft)/zl,iy=(e.clientY-r.top+sc.scrollTop)/zl;zl=Math.min(5,Math.max(0.1,zl*(e.deltaY<0?1.15:0.87)));applyZoom();sc.scrollLeft=ix*zl-(e.clientX-r.left);sc.scrollTop=iy*zl-(e.clientY-r.top);},{passive:false});
+  sc.addEventListener('wheel',e=>{e.preventDefault();const minZl=getMapMinZoom();const r=sc.getBoundingClientRect();const ix=(e.clientX-r.left+sc.scrollLeft)/zl,iy=(e.clientY-r.top+sc.scrollTop)/zl;zl=Math.min(5,Math.max(minZl,zl*(e.deltaY<0?1.15:0.87)));applyZoom();sc.scrollLeft=ix*zl-(e.clientX-r.left);sc.scrollTop=iy*zl-(e.clientY-r.top);},{passive:false});
   // Touch support (pinch zoom + pan)
   let t0=null,d0=0,zl0=0,cx0=0,cy0=0;
   sc.addEventListener('touchstart',e=>{
@@ -1550,7 +1556,7 @@ function updateProjSummary(){
       const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
       const r=sc.getBoundingClientRect();
       const ix=(cx0-r.left+sc.scrollLeft)/zl,iy=(cy0-r.top+sc.scrollTop)/zl;
-      zl=Math.min(5,Math.max(0.1,zl0*(d/d0)));applyZoom();
+      zl=Math.min(5,Math.max(getMapMinZoom(),zl0*(d/d0)));applyZoom();
       sc.scrollLeft=ix*zl-(cx0-r.left);sc.scrollTop=iy*zl-(cy0-r.top);
     } else if(e.touches.length===1&&drag){
       sc.scrollLeft=sl-(e.touches[0].clientX-sx);sc.scrollTop=st-(e.touches[0].clientY-sy);
